@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Mon Tableau de Bord{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>Bonjour, {{ etudiant.prenom }} 👋</h1>
+    <div class="ph-sub">{{ etudiant.libelle_classe }} — {{ etudiant.annee_scolaire }}</div>
+  </div>
+</div>
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-val {% if moyenne >= 10 %}note-good{% elif moyenne >= 8 %}note-avg{% else %}note-bad{% endif %}">
+      {{ "%.2f"|format(moyenne) }}/20
+    </div>
+    <div class="stat-lbl">Moyenne generale</div>
+  </div>
+  <div class="stat-card g">
+    <div class="stat-val">{{ nb_notes }}</div>
+    <div class="stat-lbl">Notes saisies</div>
+  </div>
+  <div class="stat-card p">
+    <div class="stat-val">{{ rang if rang != '-' else '—' }}</div>
+    <div class="stat-lbl">Rang dans la classe</div>
+  </div>
+  <div class="stat-card {% if moyenne >= 10 %}g{% else %}r{% endif %}">
+    <div class="stat-val" style="font-size:18px">
+      {% if moyenne >= 10 %}✅ Admis{% else %}⚠️ Ajourne{% endif %}
+    </div>
+    <div class="stat-lbl">Situation actuelle</div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header"><span class="card-title">Mes informations</span></div>
+  <table>
+    <tr>
+      <td style="width:180px;color:#9ca3af;font-size:12px;font-weight:600">MATRICULE</td>
+      <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:12px">{{ etudiant.matricule }}</code></td>
+    </tr>
+    <tr>
+      <td style="color:#9ca3af;font-size:12px;font-weight:600">NOM COMPLET</td>
+      <td>{{ etudiant.prenom }} {{ etudiant.nom }}</td>
+    </tr>
+    <tr>
+      <td style="color:#9ca3af;font-size:12px;font-weight:600">CLASSE</td>
+      <td><span class="badge b-blue">{{ etudiant.libelle_classe }}</span></td>
+    </tr>
+    <tr>
+      <td style="color:#9ca3af;font-size:12px;font-weight:600">ANNEE</td>
+      <td>{{ etudiant.annee_scolaire }}</td>
+    </tr>
+    <tr>
+      <td style="color:#9ca3af;font-size:12px;font-weight:600">TELEPHONE</td>
+      <td>{{ etudiant.telephone_etudiant or '—' }}</td>
+    </tr>
+  </table>
+  <br>
+  <a href="/EDE/etudiant/notes" class="btn btn-primary">📊 Voir mes notes →</a>
+</div>
+{% endblock %}

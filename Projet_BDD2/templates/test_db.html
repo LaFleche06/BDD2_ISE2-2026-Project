@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Test BD - EDE{% endblock %}
+{% block content %}
+<div class="ph"><h1>🔌 Test Connexion Base de Donnees</h1></div>
+<div class="card" style="max-width:500px">
+  {% if status %}
+    <div class="alert alert-success">✅ Connexion a EtudiantDB reussie !</div>
+    <p style="font-size:13px;color:#6b7280">Le serveur SQL Server repond correctement.</p>
+  {% else %}
+    <div class="alert alert-danger">❌ Echec de connexion a la base de donnees.</div>
+    <p style="font-size:13px;color:#6b7280">Verifiez config.py (serveur, login, mot de passe).</p>
+  {% endif %}
+  <br><a href="/EDE/index" class="btn btn-sec">← Retour</a>
+</div>
+{% endblock %}

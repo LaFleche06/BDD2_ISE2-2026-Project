@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Mes Classes{% endblock %}
+{% block content %}
+<div class="ph"><h1>🏫 Mes Classes</h1></div>
+<div class="card">
+  {% if classes %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Classe</th><th>Annee scolaire</th><th>Action</th></tr></thead>
+      <tbody>
+      {% for c in classes %}
+      <tr>
+        <td><strong>{{ c.libelle_classe }}</strong></td>
+        <td>{{ c.annee_scolaire }}</td>
+        <td>
+          <a href="/EDE/professeur/notes?classe_id={{ c.id_classe }}" class="btn btn-primary btn-xs">✏️ Notes</a>
+          <a href="/EDE/professeur/moyennes?classe_id={{ c.id_classe }}" class="btn btn-sec btn-xs">📈 Moyennes</a>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p style="color:#9ca3af;font-size:13px">Aucune classe affectee.</p>{% endif %}
+</div>
+{% endblock %}

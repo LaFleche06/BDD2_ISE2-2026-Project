@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Modifier une Matiere{% endblock %}
+{% block content %}
+<div class="ph"><h1>✏️ Modifier la matiere</h1></div>
+<div class="card" style="max-width:480px">
+  <form method="POST">
+    <div class="form-group"><label>Nom de la matiere</label>
+      <input type="text" name="nom" value="{{ matiere.nom_matiere if matiere else '' }}" required></div>
+    <div class="form-row">
+      <div class="form-group"><label>Coefficient</label>
+        <input type="number" name="coefficient" step="0.5" min="0.5"
+               value="{{ matiere.coefficient_matiere if matiere else 1.0 }}" required></div>
+      <div class="form-group"><label>Volume horaire</label>
+        <input type="text" name="volume_horaire"
+               value="{{ matiere.volume_horaire if matiere else '' }}" placeholder="ex: 45h"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+      <a href="/EDE/admin/matieres" class="btn btn-sec">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

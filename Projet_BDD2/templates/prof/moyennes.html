@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Moyennes{% endblock %}
+{% block content %}
+<div class="ph"><h1>📈 Moyennes & Classement</h1></div>
+
+<div class="card" style="padding:14px 20px;margin-bottom:14px">
+  <form method="GET" style="display:flex;align-items:center;gap:12px">
+    <label style="margin:0">Classe :</label>
+    <select name="classe_id" onchange="this.form.submit()" style="width:200px">
+      {% for c in classes %}
+      <option value="{{ c.id_classe }}" {% if c.id_classe==classe_id %}selected{% endif %}>{{ c.libelle_classe }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if stats %}
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants }}</div><div class="stat-lbl">Etudiants</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.moyenne_classe or '—' }}</div><div class="stat-lbl">Moyenne classe</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.nb_admis }}</div><div class="stat-lbl">Admis</div></div>
+  <div class="stat-card r"><div class="stat-val">{{ stats.nb_ajournes }}</div><div class="stat-lbl">Ajournes</div></div>
+  <div class="stat-card o"><div class="stat-val">{{ stats.taux_reussite }}%</div><div class="stat-lbl">Taux reussite</div></div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><span class="card-title">🏆 Classement</span></div>
+  {% if classement %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Rang</th><th>Etudiant</th><th>Matricule</th><th>Nb Matieres</th><th>Moyenne /20</th><th>Decision</th></tr></thead>
+      <tbody>
+      {% for e in classement %}
+      <tr>
+        <td>
+          {% if e.rang==1 %}<span class="rang-1">🥇 1</span>
+          {% elif e.rang==2 %}<span class="rang-2">🥈 2</span>
+          {% elif e.rang==3 %}<span class="rang-3">🥉 3</span>
+          {% else %}<span class="rang-n">{{ e.rang }}</span>{% endif %}
+        </td>
+        <td>{{ e.prenom }} {{ e.nom }}</td>
+        <td style="font-size:11px;color:#9ca3af">{{ e.matricule }}</td>
+        <td>{{ e.nb_matieres }}</td>
+        <td class="{{ note_color(e.moyenne_generale) }}">{{ e.moyenne_generale or '—' }}</td>
+        <td><span class="badge {% if e.decision=='Admis' %}b-green{% else %}b-red{% endif %}">{{ e.decision }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p style="text-align:center;color:#9ca3af;padding:30px">Selectionnez une classe.</p>{% endif %}
+</div>
+{% endblock %}

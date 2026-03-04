@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}{% if prof %}Modifier{% else %}Ajouter{% endif %} un Professeur{% endblock %}
+{% block content %}
+<div class="ph">
+  <h1>{% if prof %}✏️ Modifier {{ prof.prenom_prof }} {{ prof.nom_prof }}{% else %}➕ Ajouter un professeur{% endif %}</h1>
+</div>
+<div class="form-row" style="align-items:start">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Informations</span></div>
+    <form method="POST" action="{% if prof %}/EDE/admin/professeurs/modifier/{{ prof.id_prof }}{% else %}/EDE/admin/professeurs/ajouter{% endif %}">
+      <div class="form-row">
+        <div class="form-group"><label>Prenom</label>
+          <input type="text" name="prenom" value="{{ prof.prenom_prof if prof else '' }}" required></div>
+        <div class="form-group"><label>Nom</label>
+          <input type="text" name="nom" value="{{ prof.nom_prof if prof else '' }}" required></div>
+      </div>
+      <div class="form-group"><label>Telephone</label>
+        <input type="text" name="telephone" value="{{ prof.telephone_prof if prof else '' }}"></div>
+      {% if not prof %}
+      <div class="form-row">
+        <div class="form-group"><label>Email</label>
+          <input type="email" name="email" required placeholder="prenom.nom@ede.ca"></div>
+        <div class="form-group"><label>Mot de passe</label>
+          <input type="password" name="password" required></div>
+      </div>
+      {% endif %}
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+        <a href="/EDE/admin/professeurs" class="btn btn-sec">Annuler</a>
+      </div>
+    </form>
+  </div>
+
+  {% if prof %}
+  <div class="card">
+    <div class="card-header"><span class="card-title">📌 Affectations (matiere + classe)</span></div>
+    {% set aff = [] %}
+    {% for m in matieres %}
+      {% for c in classes %}
+        {# shown via VUE_ENSEIGNEMENTS — simplified here #}
+      {% endfor %}
+    {% endfor %}
+    <form method="POST" action="/EDE/admin/professeurs/affecter/{{ prof.id_prof }}">
+      <div class="form-group"><label>Matiere</label>
+        <select name="matiere_id" required>
+          <option value="">-- Choisir --</option>
+          {% for m in matieres %}
+          <option value="{{ m.id_matiere }}">{{ m.nom_matiere }} (coeff {{ m.coefficient_matiere }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group"><label>Classe</label>
+        <select name="classe_id" required>
+          <option value="">-- Choisir --</option>
+          {% for c in classes %}
+          <option value="{{ c.id_classe }}">{{ c.libelle_classe }} ({{ c.annee_scolaire }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-green btn-sm">+ Affecter</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

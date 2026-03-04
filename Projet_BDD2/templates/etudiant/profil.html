@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Mon Profil{% endblock %}
+{% block content %}
+<div class="ph"><h1>👤 Mon Profil</h1></div>
+<div class="card" style="max-width:520px">
+  <div class="card-header"><span class="card-title">Informations personnelles</span></div>
+  <table>
+    <tr><td style="width:160px;color:#9ca3af;font-size:12px;font-weight:600">MATRICULE</td>
+        <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700">{{ etudiant.matricule }}</code></td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">PRENOM</td><td>{{ etudiant.prenom }}</td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">NOM</td><td>{{ etudiant.nom }}</td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">CLASSE</td>
+        <td><span class="badge b-blue">{{ etudiant.libelle_classe }}</span></td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">ANNEE SCOLAIRE</td><td>{{ etudiant.annee_scolaire }}</td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">TELEPHONE</td><td>{{ etudiant.telephone_etudiant or '—' }}</td></tr>
+  </table>
+</div>
+{% endblock %}

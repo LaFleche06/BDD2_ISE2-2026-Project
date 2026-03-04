@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Classements{% endblock %}
+{% block content %}
+<div class="ph"><h1>🏆 Classements & Resultats</h1></div>
+
+<!-- Filtre classe -->
+<div class="card" style="padding:14px 20px;margin-bottom:14px">
+  <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <label style="margin:0">Classe :</label>
+    <select name="classe_id" onchange="this.form.submit()" style="width:200px">
+      {% for c in classes %}
+      <option value="{{ c.id_classe }}" {% if c.id_classe==classe_id %}selected{% endif %}>
+        {{ c.libelle_classe }} ({{ c.annee_scolaire }})
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if stats %}
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants }}</div><div class="stat-lbl">Etudiants</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.moyenne_classe or '—' }}</div><div class="stat-lbl">Moyenne classe</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.nb_admis }}</div><div class="stat-lbl">Admis</div></div>
+  <div class="stat-card r"><div class="stat-val">{{ stats.nb_ajournes }}</div><div class="stat-lbl">Ajournes</div></div>
+  <div class="stat-card o"><div class="stat-val">{{ stats.taux_reussite }}%</div><div class="stat-lbl">Taux reussite</div></div>
+  <div class="stat-card"><div class="stat-val">{{ stats.note_max or '—' }}</div><div class="stat-lbl">Meilleure moyenne</div></div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📊 Classement</span>
+    {% if classe_id %}
+    <form method="POST" action="/EDE/admin/classements/calculer/{{ classe_id }}" style="display:flex;gap:8px;align-items:center">
+      <input type="text" name="annee_scolaire" placeholder="2024-2025" value="2024-2025" style="width:120px;padding:6px 10px;font-size:12px">
+      <button type="submit" class="btn btn-green btn-sm">💾 Sauvegarder resultats</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if classement %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Rang</th><th>Etudiant</th><th>Matricule</th><th>Nb Matieres</th><th>Moyenne /20</th><th>Decision</th></tr></thead>
+      <tbody>
+      {% for e in classement %}
+      <tr>
+        <td>
+          {% if e.rang==1 %}<span class="rang-1">🥇 1er</span>
+          {% elif e.rang==2 %}<span class="rang-2">🥈 2e</span>
+          {% elif e.rang==3 %}<span class="rang-3">🥉 3e</span>
+          {% else %}<span class="rang-n">{{ e.rang }}e</span>{% endif %}
+        </td>
+        <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
+        <td><code style="font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:4px">{{ e.matricule }}</code></td>
+        <td>{{ e.nb_matieres }}</td>
+        <td class="{{ note_color(e.moyenne_generale) }}" style="font-size:16px;font-weight:800">
+          {{ e.moyenne_generale or '—' }}
+        </td>
+        <td>
+          <span class="badge {% if e.decision=='Admis' %}b-green{% else %}b-red{% endif %}">
+            {% if e.decision=='Admis' %}✅{% else %}❌{% endif %} {{ e.decision }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="text-align:center;color:#9ca3af;padding:40px">Selectionnez une classe pour voir le classement.</p>
+  {% endif %}
+</div>
+{% endblock %}

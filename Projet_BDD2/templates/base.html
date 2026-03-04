@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}EDE{% endblock %}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+/* TOPBAR */
+.topbar{background:#1a1a2e;height:56px;display:flex;align-items:center;padding:0 24px;gap:14px;
+        position:fixed;top:0;left:0;right:0;z-index:300;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.brand{font-weight:900;font-size:20px;color:#fff;text-decoration:none;letter-spacing:-1px}
+.brand span{color:#4f8ef7}
+.spacer{flex:1}
+.role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px}
+.rb-etudiant{background:rgba(79,142,247,.2);color:#93c5fd;border:1px solid rgba(79,142,247,.35)}
+.rb-professeur{background:rgba(124,58,237,.2);color:#c4b5fd;border:1px solid rgba(124,58,237,.35)}
+.rb-admin{background:rgba(220,38,38,.2);color:#fca5a5;border:1px solid rgba(220,38,38,.35)}
+.topbar-user{font-size:13px;color:rgba(255,255,255,.6)}
+.topbar-user strong{color:#fff}
+.btn-logout{font-size:12px;padding:7px 16px;border-radius:7px;background:#dc2626;color:#fff;
+            text-decoration:none;font-weight:700;transition:background .15s}
+.btn-logout:hover{background:#b91c1c}
+/* SIDEBAR */
+.sidebar{position:fixed;top:56px;left:0;bottom:0;width:230px;background:#fff;
+         border-right:1px solid #e5e7eb;padding:12px 0;overflow-y:auto;z-index:200}
+.nav-label{padding:12px 16px 4px;font-size:10px;font-weight:700;letter-spacing:1.5px;
+           text-transform:uppercase;color:#bbb}
+.nav-link{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;
+          font-weight:500;color:#555;text-decoration:none;margin:1px 8px;border-radius:8px;
+          transition:background .12s,color .12s}
+.nav-link:hover{background:#f0f2f5;color:#1a1a2e}
+.nav-link.active{background:#4f8ef7;color:#fff}
+.nav-link .ico{width:20px;text-align:center}
+/* MAIN */
+.main{margin-left:230px;margin-top:56px;padding:28px;min-height:calc(100vh - 56px)}
+.no-sidebar{margin-left:0}
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px;border-left:4px solid;
+       display:flex;align-items:center;gap:8px}
+.alert-success{background:#d1fae5;border-color:#059669;color:#065f46}
+.alert-danger{background:#fee2e2;border-color:#dc2626;color:#991b1b}
+.alert-warning{background:#fef3c7;border-color:#d97706;color:#92400e}
+/* CARDS */
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;
+             margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f3f4f6}
+.card-title{font-weight:700;font-size:15px}
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+.stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;
+           border-top:3px solid #4f8ef7}
+.stat-card.g{border-top-color:#059669}.stat-card.p{border-top-color:#7c3aed}
+.stat-card.r{border-top-color:#dc2626}.stat-card.o{border-top-color:#d97706}
+.stat-val{font-size:30px;font-weight:900;line-height:1}
+.stat-lbl{font-size:12px;color:#9ca3af;margin-top:4px}
+/* PAGE HEADER */
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
+.ph h1{font-size:22px;font-weight:900}
+.ph-sub{font-size:12px;color:#9ca3af;margin-top:2px}
+/* TABLES */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e5e7eb}
+table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+th{text-align:left;padding:10px 14px;font-size:10px;font-weight:700;letter-spacing:.8px;
+   text-transform:uppercase;color:#9ca3af;border-bottom:2px solid #e5e7eb;background:#fafafa}
+td{padding:11px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.b-green{background:#d1fae5;color:#065f46}.b-red{background:#fee2e2;color:#991b1b}
+.b-blue{background:#dbeafe;color:#1e40af}.b-purple{background:#ede9fe;color:#5b21b6}
+.b-orange{background:#fef3c7;color:#92400e}.b-grey{background:#f3f4f6;color:#6b7280}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;
+     font-size:13px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:all .15s}
+.btn-primary{background:#4f8ef7;color:#fff}.btn-primary:hover{background:#3b7de8}
+.btn-green{background:#059669;color:#fff}.btn-green:hover{background:#047857}
+.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
+.btn-sec{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb}.btn-sec:hover{background:#e5e7eb}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+/* FORMS */
+.form-group{margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;color:#374151;
+      text-transform:uppercase;letter-spacing:.4px}
+input,select,textarea{width:100%;padding:10px 13px;border:1.5px solid #e5e7eb;border-radius:8px;
+                      font-family:inherit;font-size:13px;background:#fff;color:#1a1a2e;
+                      transition:border .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#4f8ef7;
+                                        box-shadow:0 0 0 3px rgba(79,142,247,.12)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* NOTES */
+.note-good{color:#059669;font-weight:700}
+.note-avg{color:#d97706;font-weight:700}
+.note-bad{color:#dc2626;font-weight:700}
+.bar{display:inline-block;height:6px;border-radius:3px;background:#f3f4f6;
+     vertical-align:middle;overflow:hidden;width:60px}
+.bar-fill{height:100%;border-radius:3px;background:#4f8ef7}
+.bar-fill.g{background:#059669}.bar-fill.o{background:#d97706}.bar-fill.r{background:#dc2626}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+          align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:28px;width:100%;max-width:500px;
+       position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-title{font-weight:700;font-size:16px;margin-bottom:20px;padding-bottom:12px;
+             border-bottom:1px solid #f3f4f6}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;
+             font-size:22px;cursor:pointer;color:#9ca3af;line-height:1}
+.modal-close:hover{color:#374151}
+/* RANG */
+.rang-1{background:#fbbf24;color:#78350f;padding:3px 10px;border-radius:20px;font-weight:800;font-size:12px}
+.rang-2{background:#d1d5db;color:#374151;padding:3px 10px;border-radius:20px;font-weight:700;font-size:12px}
+.rang-3{background:#d97706;color:#fff;padding:3px 10px;border-radius:20px;font-weight:700;font-size:12px}
+.rang-n{font-weight:600;color:#6b7280}
+</style>
+</head>
+<body>
+<!-- TOPBAR -->
+<nav class="topbar">
+  <a class="brand" href="/EDE/index">EDE<span>.</span></a>
+  <div class="spacer"></div>
+  {% if session.user_id %}
+    {% if session.role=='etudiant' %}<span class="role-badge rb-etudiant">🎓 ETUDIANT</span>
+    {% elif session.role=='professeur' %}<span class="role-badge rb-professeur">📚 PROF</span>
+    {% else %}<span class="role-badge rb-admin">⚙️ ADMIN</span>{% endif %}
+    <div class="topbar-user">Bonjour, <strong>{{ session.nom }}</strong></div>
+    <a href="/EDE/logout" class="btn-logout">⏻ Deconnexion</a>
+  {% endif %}
+</nav>
+
+{% if session.user_id %}
+<aside class="sidebar">
+  {% if session.role=='etudiant' %}
+    <div class="nav-label">Mon espace</div>
+    <a class="nav-link {% if request.endpoint=='etudiant_dashboard' %}active{% endif %}" href="/EDE/etudiant"><span class="ico">🏠</span>Tableau de bord</a>
+    <a class="nav-link {% if request.endpoint=='etudiant_profil' %}active{% endif %}" href="/EDE/etudiant/profil"><span class="ico">👤</span>Mon Profil</a>
+    <a class="nav-link {% if request.endpoint=='etudiant_notes' %}active{% endif %}" href="/EDE/etudiant/notes"><span class="ico">📊</span>Mes Notes</a>
+
+  {% elif session.role=='professeur' %}
+    <div class="nav-label">Mon espace</div>
+    <a class="nav-link {% if request.endpoint=='prof_dashboard' %}active{% endif %}" href="/EDE/professeur"><span class="ico">🏠</span>Tableau de bord</a>
+    <a class="nav-link {% if request.endpoint=='prof_notes' %}active{% endif %}" href="/EDE/professeur/notes"><span class="ico">✏️</span>Saisie des notes</a>
+    <a class="nav-link {% if request.endpoint=='prof_moyennes' %}active{% endif %}" href="/EDE/professeur/moyennes"><span class="ico">📈</span>Moyennes</a>
+    <a class="nav-link {% if request.endpoint=='prof_classe' %}active{% endif %}" href="/EDE/professeur/classe"><span class="ico">🏫</span>Mes classes</a>
+
+  {% else %}
+    <div class="nav-label">Vue generale</div>
+    <a class="nav-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}" href="/EDE/admin"><span class="ico">🏠</span>Tableau de bord</a>
+    <a class="nav-link {% if request.endpoint=='admin_classements' %}active{% endif %}" href="/EDE/admin/classements"><span class="ico">🏆</span>Classements</a>
+    <div class="nav-label">Gestion</div>
+    <a class="nav-link {% if request.endpoint=='admin_etudiants' %}active{% endif %}" href="/EDE/admin/etudiants"><span class="ico">👥</span>Etudiants</a>
+    <a class="nav-link {% if request.endpoint=='admin_professeurs' %}active{% endif %}" href="/EDE/admin/professeurs"><span class="ico">📚</span>Professeurs</a>
+    <a class="nav-link {% if request.endpoint=='admin_matieres' %}active{% endif %}" href="/EDE/admin/matieres"><span class="ico">📖</span>Matieres</a>
+    <a class="nav-link {% if request.endpoint=='admin_classes' %}active{% endif %}" href="/EDE/admin/classes"><span class="ico">🏫</span>Classes</a>
+    <a class="nav-link {% if request.endpoint=='admin_notes' %}active{% endif %}" href="/EDE/admin/notes"><span class="ico">📝</span>Notes</a>
+  {% endif %}
+  <div class="nav-label">Systeme</div>
+  <a class="nav-link" href="/EDE/test-db"><span class="ico">🔌</span>Test BD</a>
+</aside>
+{% endif %}
+
+<main class="main {% if not session.user_id %}no-sidebar{% endif %}">
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat,msg in messages %}
+  <div class="alert alert-{{cat}}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de bord Professeur{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>Bonjour, {{ prof.prenom_prof }} 👋</h1>
+  <div class="ph-sub">Espace Professeur</div></div>
+</div>
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-val">{{ classes|length }}</div>
+    <div class="stat-lbl">Classes</div>
+  </div>
+  <div class="stat-card g">
+    <div class="stat-val">{{ matieres|length }}</div>
+    <div class="stat-lbl">Matieres enseignees</div>
+  </div>
+</div>
+<div class="form-row">
+  <div class="card">
+    <div class="card-header"><span class="card-title">📚 Mes matieres et classes</span></div>
+    {% if matieres %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Matiere</th><th>Coefficient</th><th>Classe</th></tr></thead>
+        <tbody>
+        {% for m in matieres %}
+        <tr>
+          <td><strong>{{ m.nom_matiere }}</strong></td>
+          <td><span class="badge b-blue">{{ m.coefficient_matiere }}</span></td>
+          <td><span class="badge b-purple">{{ m.libelle_classe }}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:#9ca3af;font-size:13px">Aucune affectation pour le moment.</p>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">🚀 Acces rapide</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <a href="/EDE/professeur/notes" class="btn btn-primary">✏️ Saisir / gerer les notes</a>
+      <a href="/EDE/professeur/moyennes" class="btn btn-sec">📈 Voir les moyennes</a>
+      <a href="/EDE/professeur/classe" class="btn btn-sec">🏫 Mes classes</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

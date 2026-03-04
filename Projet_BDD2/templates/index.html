@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Accueil - EDE{% endblock %}
+{% block content %}
+<style>
+.hero{text-align:center;padding:60px 20px;max-width:700px;margin:0 auto}
+.hero h1{font-size:48px;font-weight:900;letter-spacing:-2px;margin-bottom:12px}
+.hero h1 span{color:#4f8ef7}
+.hero p{font-size:16px;color:#6b7280;margin-bottom:32px;line-height:1.7}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;
+          max-width:700px;margin:0 auto}
+.feat{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;text-align:center}
+.feat .ico{font-size:32px;margin-bottom:10px}
+.feat h3{font-weight:700;margin-bottom:6px}
+.feat p{font-size:12px;color:#9ca3af}
+</style>
+<div class="hero">
+  <h1>Bienvenue sur <span>EDE</span></h1>
+  <p>Plateforme de gestion des etudiants, notes et resultats.<br>Connectez-vous pour acceder a votre espace.</p>
+  <a href="/EDE/login" class="btn btn-primary" style="font-size:15px;padding:12px 28px">Se connecter →</a>
+</div>
+<div class="features">
+  <div class="feat"><div class="ico">🎓</div><h3>Etudiants</h3><p>Consultez vos notes et resultats</p></div>
+  <div class="feat"><div class="ico">📚</div><h3>Professeurs</h3><p>Saisie et gestion des notes</p></div>
+  <div class="feat"><div class="ico">⚙️</div><h3>Administration</h3><p>Gestion complete du systeme</p></div>
+</div>
+{% endblock %}

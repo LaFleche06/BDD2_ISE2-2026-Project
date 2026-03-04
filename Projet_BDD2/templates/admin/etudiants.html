@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Gestion Etudiants{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>👥 Etudiants</h1><div class="ph-sub">{{ etudiants|length }} etudiant(s)</div></div>
+  <a href="/EDE/admin/etudiants/ajouter" class="btn btn-primary">+ Ajouter</a>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Matricule</th><th>Nom complet</th><th>Classe</th><th>Annee</th><th>Telephone</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for e in etudiants %}
+      <tr>
+        <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">{{ e.matricule }}</code></td>
+        <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
+        <td><span class="badge b-blue">{{ e.libelle_classe or '—' }}</span></td>
+        <td style="font-size:12px;color:#9ca3af">{{ e.annee_scolaire or '—' }}</td>
+        <td style="font-size:12px">{{ e.telephone_etudiant or '—' }}</td>
+        <td>
+          <a href="/EDE/admin/etudiants/modifier/{{ e.matricule }}" class="btn btn-sec btn-xs">✏️ Modifier</a>
+          <form method="POST" action="/EDE/admin/etudiants/supprimer/{{ e.matricule }}"
+                style="display:inline" onsubmit="return confirm('Supprimer {{ e.prenom }} {{ e.nom }} ?')">
+            <button type="submit" class="btn btn-red btn-xs">🗑️ Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
