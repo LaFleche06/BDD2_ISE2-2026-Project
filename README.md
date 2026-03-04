@@ -259,20 +259,6 @@ http://localhost:5000/EDE/index
 
 ---
 
-## 📌 Notes importantes
-
-> ⚠️ **Python 3.12 requis** — pyodbc n'est pas compatible avec Python 3.13/3.14 au moment du développement.
-
-> ⚠️ **setup_passwords.py** doit être exécuté **une seule fois** après la création de la base.
-
-> ⚠️ À chaque nouvelle session PowerShell, activez l'environnement avant de lancer l'app :
-> ```powershell
-> venv312\Scripts\activate
-> python app.py
-> ```
-
----
-
 ## 📄 Licence
 
 Ce projet est sous licence **MIT** — libre d'utilisation, modification et distribution.
