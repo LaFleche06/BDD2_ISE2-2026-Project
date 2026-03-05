@@ -1,10 +1,12 @@
 # ============================================================
-# config.py - Modifier avec vos parametres SQL Server
+# config.py - Modifier avec vos paramètres SQL Server
 # ============================================================
-DB_SERVER   = 'SARAH-LAURE\\IS2_DB'
+
+DB_SERVER   = 'DESKTOP-XXXX\\SQLEXPRESS'
 DB_NAME     = 'EtudiantDB'
 DB_USER     = 'sa'
-DB_PASSWORD = 'ensae'
+DB_PASSWORD = 'VotreMotDePasse'
+
 DB_DRIVER   = 'ODBC Driver 17 for SQL Server'
 SECRET_KEY  = 'ede-secret-key-2024'
 
