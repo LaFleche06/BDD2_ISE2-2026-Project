@@ -1,14 +1,35 @@
 # ============================================================
-# config.py - Modifier avec vos paramètres SQL Server
+# config.py - Configuration SQL Server
 # ============================================================
 
-DB_SERVER   = 'DESKTOP-XXXX\\SQLEXPRESS'
-DB_NAME     = 'EtudiantDB'
-DB_USER     = 'sa'
-DB_PASSWORD = 'VotreMotDePasse'
+import os
 
-DB_DRIVER   = 'ODBC Driver 17 for SQL Server'
-SECRET_KEY  = 'ede-secret-key-2024'
+
+# ------------------------------------------------------------
+# Paramètres base de données
+# ------------------------------------------------------------
+
+# Si variables d'environnement existent → on les utilise
+# sinon on prend les valeurs par défaut pour le développement
+
+DB_SERVER   = os.getenv("DB_SERVER", r"SARAH-LAURE\IS2_DB")
+DB_NAME     = os.getenv("DB_NAME", "EtudiantDB")
+DB_USER     = os.getenv("DB_USER", "sa")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "ensae")
+
+DB_DRIVER = "ODBC Driver 17 for SQL Server"
+
+
+# ------------------------------------------------------------
+# Flask
+# ------------------------------------------------------------
+
+SECRET_KEY = os.getenv("SECRET_KEY", "ede-secret-key-2024")
+
+
+# ------------------------------------------------------------
+# Connection string SQL Server
+# ------------------------------------------------------------
 
 def get_conn_string():
     return (
@@ -17,6 +38,6 @@ def get_conn_string():
         f"DATABASE={DB_NAME};"
         f"UID={DB_USER};"
         f"PWD={DB_PASSWORD};"
-        f"TrustServerCertificate=yes;"
-        f"Connection Timeout=5;"
+        "TrustServerCertificate=yes;"
+        "Connection Timeout=5;"
     )

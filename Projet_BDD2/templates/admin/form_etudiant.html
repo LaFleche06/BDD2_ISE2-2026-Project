@@ -1,55 +1,145 @@
 {% extends 'base.html' %}
-{% block title %}{% if etudiant %}Modifier{% else %}Ajouter{% endif %} un Etudiant{% endblock %}
+
+{% block title %}
+{% if etudiant %}Modifier{% else %}Ajouter{% endif %} un Etudiant
+{% endblock %}
+
 {% block content %}
+
 <div class="ph">
-  <h1>{% if etudiant %}✏️ Modifier{{ etudiant.prenom }} {{ etudiant.nom }}{% else %}➕ Ajouter un etudiant{% endif %}</h1>
+  <h1>
+    {% if etudiant %}
+      ✏️ Modifier {{ etudiant.prenom }} {{ etudiant.nom }}
+    {% else %}
+      ➕ Ajouter un etudiant
+    {% endif %}
+  </h1>
 </div>
+
 <div class="card" style="max-width:580px">
+
   <form method="POST">
+
+    <!-- =====================
+         NOM / PRENOM
+    ====================== -->
+
     <div class="form-row">
+
       <div class="form-group">
         <label>Prenom</label>
-        <input type="text" name="prenom" value="{{ etudiant.prenom if etudiant else '' }}" required>
+        <input type="text"
+               name="prenom"
+               value="{{ etudiant.prenom if etudiant else '' }}"
+               required
+               onkeyup="updateEmail()">
       </div>
+
       <div class="form-group">
         <label>Nom</label>
-        <input type="text" name="nom" value="{{ etudiant.nom if etudiant else '' }}" required>
+        <input type="text"
+               name="nom"
+               value="{{ etudiant.nom if etudiant else '' }}"
+               required
+               onkeyup="updateEmail()">
       </div>
+
     </div>
+
+
+    <!-- =====================
+         TELEPHONE + CLASSE
+    ====================== -->
+
     <div class="form-row">
+
       <div class="form-group">
         <label>Telephone</label>
-        <input type="text" name="telephone" value="{{ etudiant.telephone_etudiant if etudiant else '' }}" placeholder="ex: 0644444444">
+        <input type="text"
+               name="telephone"
+               value="{{ etudiant.telephone_etudiant if etudiant else '' }}"
+               placeholder="+221770000000">
       </div>
+
       <div class="form-group">
         <label>Classe</label>
-        <select name="classe_id">
-          <option value="">-- Aucune --</option>
-          {% for c in classes %}
-          <option value="{{ c.id_classe }}"
-            {% if etudiant and etudiant.Classe_id_classe==c.id_classe %}selected{% endif %}>
-            {{ c.libelle_classe }} ({{ c.annee_scolaire }})
-          </option>
-          {% endfor %}
+
+        <select name="classe_id" required> <option value="">-- Choisir --</option>
+            {% for c in classes %}
+                <option value="{{ c.id_classe }}">
+                    {{ c.libelle_classe }}
+                </option>
+            {% endfor %}
         </select>
+
       </div>
+
     </div>
+
+
+    <!-- =====================
+         EMAIL + PASSWORD
+    ====================== -->
+
     {% if not etudiant %}
-    <div class="form-row">
-      <div class="form-group">
-        <label>Email (identifiant)</label>
-        <input type="email" name="email" required placeholder="prenom.nom@ede.ca">
-      </div>
-      <div class="form-group">
-        <label>Mot de passe</label>
-        <input type="password" name="password" required placeholder="••••••••">
-      </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="text" id="email_preview" disabled>
     </div>
+
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password"
+             name="password"
+             required
+             placeholder="ex: prenom123">
+    </div>
+
     {% endif %}
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
-      <a href="/EDE/admin/etudiants" class="btn btn-sec">Annuler</a>
+
+
+    <!-- =====================
+         BOUTONS
+    ====================== -->
+
+    <div style="display:flex;gap:10px;margin-top:10px">
+
+      <button type="submit" class="btn btn-primary">
+        💾 Enregistrer
+      </button>
+
+      <a href="/EDE/admin/etudiants" class="btn btn-sec">
+        Annuler
+      </a>
+
     </div>
+
   </form>
+
 </div>
+
+
+<!-- =====================
+     SCRIPT EMAIL AUTO
+===================== -->
+
+<script>
+
+function updateEmail(){
+
+    let prenom = document.querySelector("[name='prenom']").value.toLowerCase().trim()
+    let nom = document.querySelector("[name='nom']").value.toLowerCase().trim()
+
+    if(prenom && nom){
+
+        document.getElementById("email_preview").value =
+            prenom + "." + nom + "@ede.sn"
+
+    }
+
+}
+
+</script>
+
 {% endblock %}

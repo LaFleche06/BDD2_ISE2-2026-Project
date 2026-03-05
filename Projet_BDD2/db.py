@@ -56,17 +56,28 @@ def get_etudiant_by_user(user_id):
     """, user_id, fetchone=True)
 
 def add_etudiant(nom, prenom, email, telephone, classe_id, hpwd):
-    conn   = get_connection()
+
+    conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO UTILISATEUR (email_utilisateur,mot_de_passe,role_utilisateur) VALUES (?,?,'etudiant')",
-        email, hpwd)
-    cursor.execute("SELECT SCOPE_IDENTITY()")
-    uid = int(cursor.fetchone()[0])
-    cursor.execute(
-        "INSERT INTO ETUDIANT (Classe_id_classe,UTILISATEUR_id_utilisateur,nom,prenom,telephone_etudiant) VALUES (?,?,?,?,?)",
-        classe_id or None, uid, nom, prenom, telephone)
-    conn.commit(); conn.close()
+
+    # insertion utilisateur + récupération de l'id
+    cursor.execute("""
+        INSERT INTO UTILISATEUR (email_utilisateur, mot_de_passe, role_utilisateur)
+        OUTPUT INSERTED.id_utilisateur
+        VALUES (?, ?, 'etudiant')
+    """, email, hpwd)
+
+    uid = cursor.fetchone()[0]
+
+    # insertion étudiant
+    cursor.execute("""
+        INSERT INTO ETUDIANT
+        (Classe_id_classe, UTILISATEUR_id_utilisateur, nom, prenom, telephone_etudiant)
+        VALUES (?, ?, ?, ?, ?)
+    """, classe_id, uid, nom, prenom, telephone)
+
+    conn.commit()
+    conn.close()
 
 def update_etudiant(matricule, nom, prenom, telephone, classe_id):
     query("UPDATE ETUDIANT SET nom=?,prenom=?,telephone_etudiant=?,Classe_id_classe=? WHERE matricule=?",
@@ -103,17 +114,26 @@ def get_professeur_by_user(user_id):
     return query("SELECT * FROM PROFESSEUR WHERE UTILISATEUR_id_utilisateur=?", user_id, fetchone=True)
 
 def add_professeur(nom, prenom, email, telephone, hpwd):
-    conn   = get_connection()
+
+    conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO UTILISATEUR (email_utilisateur,mot_de_passe,role_utilisateur) VALUES (?,?,'professeur')",
-        email, hpwd)
-    cursor.execute("SELECT SCOPE_IDENTITY()")
-    uid = int(cursor.fetchone()[0])
-    cursor.execute(
-        "INSERT INTO PROFESSEUR (UTILISATEUR_id_utilisateur,nom_prof,prenom_prof,telephone_prof) VALUES (?,?,?,?)",
-        uid, nom, prenom, telephone)
-    conn.commit(); conn.close()
+
+    cursor.execute("""
+        INSERT INTO UTILISATEUR (email_utilisateur, mot_de_passe, role_utilisateur)
+        OUTPUT INSERTED.id_utilisateur
+        VALUES (?, ?, 'professeur')
+    """, email, hpwd)
+
+    uid = cursor.fetchone()[0]
+
+    cursor.execute("""
+        INSERT INTO PROFESSEUR
+        (UTILISATEUR_id_utilisateur, nom_prof, prenom_prof, telephone_prof)
+        VALUES (?, ?, ?, ?)
+    """, uid, nom, prenom, telephone)
+
+    conn.commit()
+    conn.close()
 
 def update_professeur(pid, nom, prenom, telephone):
     query("UPDATE PROFESSEUR SET nom_prof=?,prenom_prof=?,telephone_prof=? WHERE id_prof=?",

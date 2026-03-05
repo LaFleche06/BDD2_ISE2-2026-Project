@@ -115,7 +115,7 @@ def etudiant_profil():
 @login_required('etudiant')
 def etudiant_notes():
     notes, moy = db.get_moyennes_etudiant(session['entity_id'])
-    decision = 'Admis' if moy >= 10 else 'Ajourne'
+    decision = 'Admis' if moy >= 12 else 'Ajourne'
     return render_template('etudiant/notes.html', notes=notes, moyenne=moy, decision=decision)
 
 # ── PROFESSEUR ────────────────────────────────────────────────────────────────
@@ -206,22 +206,49 @@ def admin_etudiants():
 @app.route('/EDE/admin/etudiants/ajouter', methods=['GET','POST'])
 @login_required('admin')
 def admin_etudiant_ajouter():
+
     classes = db.get_all_classes()
+
     if request.method == 'POST':
         try:
+
+            prenom = request.form['prenom'].strip().lower()
+            nom = request.form['nom'].strip().lower()
+            telephone = request.form.get('telephone','').strip()
+
+            classe_id_raw = request.form.get('classe_id')
+            if not classe_id_raw:
+                raise ValueError("Veuillez sélectionner une classe.")
+
+            classe_id = int(classe_id_raw)
+
+            email = f"{prenom}.{nom}@ede.sn"
+
+            password = bcrypt.hashpw(
+                request.form['password'].encode(),
+                bcrypt.gensalt()
+            ).decode()
+
             db.add_etudiant(
-                request.form['nom'].strip(),
-                request.form['prenom'].strip(),
-                request.form['email'].strip(),
-                request.form.get('telephone','').strip(),
-                request.form.get('classe_id', type=int),
-                bcrypt.hashpw(request.form['password'].encode(), bcrypt.gensalt()).decode())
-            flash('Etudiant ajoute avec succes.', 'success')
+                nom,
+                prenom,
+                email,
+                telephone,
+                classe_id,
+                password
+            )
+
+            flash('Etudiant ajouté avec succès.', 'success')
             return redirect(url_for('admin_etudiants'))
+
         except Exception as e:
             flash(f'Erreur : {e}', 'danger')
-    return render_template('admin/form_etudiant.html', classes=classes, etudiant=None)
 
+    return render_template(
+        'admin/form_etudiant.html',
+        classes=classes,
+        etudiant=None
+    )
 @app.route('/EDE/admin/etudiants/modifier/<int:matricule>', methods=['GET','POST'])
 @login_required('admin')
 def admin_etudiant_modifier(matricule):
@@ -256,21 +283,53 @@ def admin_professeurs():
 @app.route('/EDE/admin/professeurs/ajouter', methods=['GET','POST'])
 @login_required('admin')
 def admin_prof_ajouter():
+
     matieres = db.get_all_matieres()
-    classes  = db.get_all_classes()
+    classes = db.get_all_classes()
+
     if request.method == 'POST':
         try:
-            db.add_professeur(
-                request.form['nom'].strip(),
-                request.form['prenom'].strip(),
-                request.form['email'].strip(),
-                request.form.get('telephone','').strip(),
-                bcrypt.hashpw(request.form['password'].encode(), bcrypt.gensalt()).decode())
-            flash('Professeur ajoute.', 'success')
+
+            prenom = request.form['prenom'].strip()
+            nom = request.form['nom'].strip()
+            telephone = request.form.get('telephone','').strip()
+
+            email = f"{prenom.lower()}.{nom.lower()}@ede.sn"
+
+            password = bcrypt.hashpw(
+                request.form['password'].encode(),
+                bcrypt.gensalt()
+            ).decode()
+
+            # création du professeur
+            pid = db.add_professeur(
+                nom,
+                prenom,
+                email,
+                telephone,
+                password
+            )
+
+            # récupération affectations
+            matiere_ids = request.form.getlist("matieres")
+            classe_ids = request.form.getlist("classes")
+
+            for m in matiere_ids:
+                for c in classe_ids:
+                    db.affecter_professeur(pid, int(m), int(c))
+
+            flash('Professeur ajouté et affecté.', 'success')
             return redirect(url_for('admin_professeurs'))
+
         except Exception as e:
             flash(f'Erreur : {e}', 'danger')
-    return render_template('admin/form_prof.html', prof=None, matieres=matieres, classes=classes)
+
+    return render_template(
+        'admin/form_prof.html',
+        prof=None,
+        matieres=matieres,
+        classes=classes
+    )
 
 @app.route('/EDE/admin/professeurs/modifier/<int:pid>', methods=['GET','POST'])
 @login_required('admin')
