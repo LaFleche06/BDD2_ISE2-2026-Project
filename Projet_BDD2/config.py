@@ -1,10 +1,10 @@
 # ============================================================
 # config.py - Modifier avec vos parametres SQL Server
 # ============================================================
-DB_SERVER   = 'DESKTOP-QD64R1P\ISE2_DB'  # ex: DESKTOP-XXX\\SQLEXPRESS
+DB_SERVER   = 'SARAH-LAURE\\IS2_DB'
 DB_NAME     = 'EtudiantDB'
 DB_USER     = 'sa'
-DB_PASSWORD = 'jenney'
+DB_PASSWORD = 'ensae'
 DB_DRIVER   = 'ODBC Driver 17 for SQL Server'
 SECRET_KEY  = 'ede-secret-key-2024'
 

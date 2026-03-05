@@ -22,7 +22,7 @@
 <div class="card">
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Etudiant</th><th>Classe</th><th>Matiere</th><th>Note /20</th><th>Professeur</th><th>Date</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Etudiant</th><th>Classe</th><th>Matiere</th><th>Note /20</th><th>Date</th><th>Actions</th></tr></thead>
       <tbody>
       {% for n in notes %}
       <tr>
@@ -32,7 +32,6 @@
         <td>{{ n.nom_matiere }}<br>
             <span class="badge b-blue" style="font-size:10px">coeff {{ n.coefficient_matiere }}</span></td>
         <td class="{{ note_color(n.valeur_note) }}"><strong>{{ "%.2f"|format(n.valeur_note) }}</strong></td>
-        <td style="font-size:12px">{{ n.prenom_prof }} {{ n.nom_prof }}</td>
         <td style="font-size:11px;color:#9ca3af">{{ n.date_saisie or '—' }}</td>
         <td>
           <button class="btn btn-sec btn-xs" onclick="editNote({{ n.id_notes }}, {{ n.valeur_note }})">✏️</button>
@@ -83,14 +82,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="form-group"><label>Professeur</label>
-        <select name="prof_id" required>
-          <option value="">-- Choisir --</option>
-          {% for p in professeurs %}
-          <option value="{{ p.id_prof }}">{{ p.prenom_prof }} {{ p.nom_prof }}</option>
-          {% endfor %}
-        </select>
-      </div>
+
       <div class="form-row">
         <div class="form-group"><label>Note (0-20)</label>
           <input type="number" name="valeur_note" step="0.01" min="0" max="20" required></div>

@@ -1,143 +1,75 @@
 {% extends 'base.html' %}
-{% block title %}Gestion Notes (Admin){% endblock %}
+{% block title %}Mes Notes{% endblock %}
+
 {% block content %}
+
 <div class="ph">
-  <div><h1>📝 Toutes les Notes</h1><div class="ph-sub">{{ notes|length }} note(s)</div></div>
-  <button class="btn btn-primary" onclick="document.getElementById('modal-add').classList.add('open')">+ Ajouter</button>
+  <div>
+    <h1>📊 Mes Notes</h1>
+    <div class="ph-sub">{{ notes|length }} note(s) enregistrée(s)</div>
+  </div>
 </div>
 
-<!-- Filtre -->
-<div class="card" style="padding:14px 20px;margin-bottom:14px">
-  <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <label style="margin:0">Filtrer par classe :</label>
-    <select name="classe_id" onchange="this.form.submit()" style="width:200px">
-      <option value="">-- Toutes les classes --</option>
-      {% for c in classes %}
-      <option value="{{ c.id_classe }}" {% if c.id_classe==classe_id %}selected{% endif %}>{{ c.libelle_classe }}</option>
-      {% endfor %}
-    </select>
-  </form>
+<div class="card" style="padding:16px;margin-bottom:16px">
+  <p style="font-size:13px;color:#6b7280">
+  Cette page vous permet de consulter vos résultats académiques.
+  </p>
 </div>
 
 <div class="card">
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Etudiant</th><th>Classe</th><th>Matiere</th><th>Note /20</th><th>Professeur</th><th>Date</th><th>Actions</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Matière</th>
+          <th>Coefficient</th>
+          <th>Note /20</th>
+          <th>Professeur</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+
       <tbody>
+
       {% for n in notes %}
       <tr>
-        <td>{{ n.prenom_etudiant }} {{ n.nom_etudiant }}<br>
-            <span style="font-size:10px;color:#9ca3af">mat. {{ n.matricule }}</span></td>
-        <td><span class="badge b-purple">{{ n.libelle_classe }}</span></td>
-        <td>{{ n.nom_matiere }}<br>
-            <span class="badge b-blue" style="font-size:10px">coeff {{ n.coefficient_matiere }}</span></td>
-        <td class="{{ note_color(n.valeur_note) }}"><strong>{{ "%.2f"|format(n.valeur_note) }}</strong></td>
-        <td style="font-size:12px">{{ n.prenom_prof }} {{ n.nom_prof }}</td>
-        <td style="font-size:11px;color:#9ca3af">{{ n.date_saisie or '—' }}</td>
+
         <td>
-          <button class="btn btn-sec btn-xs" onclick="editNote({{ n.id_notes }}, {{ n.valeur_note }})">✏️</button>
-          <form method="POST" style="display:inline" onsubmit="return confirm('Supprimer cette note ?')">
-            <input type="hidden" name="action" value="supprimer">
-            <input type="hidden" name="note_id" value="{{ n.id_notes }}">
-            <button type="submit" class="btn btn-red btn-xs">🗑️</button>
-          </form>
+          <strong>{{ n.nom_matiere }}</strong>
         </td>
+
+        <td>
+          <span class="badge b-blue">
+          {{ n.coefficient_matiere }}
+          </span>
+        </td>
+
+        <td class="{{ note_color(n.valeur_note) }}">
+          <strong>{{ "%.2f"|format(n.valeur_note) }}</strong>
+        </td>
+
+        <td style="font-size:13px">
+          {{ n.prenom_prof }} {{ n.nom_prof }}
+        </td>
+
+        <td style="font-size:12px;color:#9ca3af">
+          {{ n.date_saisie or '—' }}
+        </td>
+
       </tr>
       {% endfor %}
+
       {% if not notes %}
-      <tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:30px">Aucune note.</td></tr>
+      <tr>
+        <td colspan="5" style="text-align:center;color:#9ca3af;padding:30px">
+        Aucune note disponible.
+        </td>
+      </tr>
       {% endif %}
+
       </tbody>
     </table>
   </div>
 </div>
 
-<!-- Modal Ajouter -->
-<div class="modal-bg" id="modal-add">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('modal-add').classList.remove('open')">×</button>
-    <div class="modal-title">Ajouter une note</div>
-    <form method="POST">
-      <input type="hidden" name="action" value="ajouter">
-      <div class="form-group"><label>Classe</label>
-        <select id="filtre-classe" onchange="filtrerEtudiants()" style="width:100%">
-          <option value="">-- Choisir une classe --</option>
-          {% for c in classes %}
-          <option value="{{ c.id_classe }}">{{ c.libelle_classe }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group"><label>Etudiant</label>
-        <select name="matricule" id="sel-etudiant" required>
-          <option value="">-- Choisir l'etudiant --</option>
-          {% for e in etudiants %}
-          <option value="{{ e.matricule }}" data-classe="{{ e.Classe_id_classe }}">{{ e.prenom }} {{ e.nom }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group"><label>Matiere</label>
-        <select name="matiere_id" required>
-          <option value="">-- Choisir --</option>
-          {% for m in matieres %}
-          <option value="{{ m.id_matiere }}">{{ m.nom_matiere }} (coeff {{ m.coefficient_matiere }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group"><label>Professeur</label>
-        <select name="prof_id" required>
-          <option value="">-- Choisir --</option>
-          {% for p in professeurs %}
-          <option value="{{ p.id_prof }}">{{ p.prenom_prof }} {{ p.nom_prof }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Note (0-20)</label>
-          <input type="number" name="valeur_note" step="0.01" min="0" max="20" required></div>
-        <div class="form-group"><label>Date</label>
-          <input type="date" name="date_saisie" value="{{ today() }}"></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <button type="button" class="btn btn-sec"
-          onclick="document.getElementById('modal-add').classList.remove('open')">Annuler</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Modal Modifier -->
-<div class="modal-bg" id="modal-edit">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('modal-edit').classList.remove('open')">×</button>
-    <div class="modal-title">Modifier la note</div>
-    <form method="POST">
-      <input type="hidden" name="action" value="modifier">
-      <input type="hidden" name="note_id" id="edit-id">
-      <div class="form-group"><label>Nouvelle note (0-20)</label>
-        <input type="number" name="valeur_note" id="edit-val" step="0.01" min="0" max="20" required></div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <button type="button" class="btn btn-sec"
-          onclick="document.getElementById('modal-edit').classList.remove('open')">Annuler</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-function editNote(id, val) {
-  document.getElementById('edit-id').value = id;
-  document.getElementById('edit-val').value = val;
-  document.getElementById('modal-edit').classList.add('open');
-}
-function filtrerEtudiants() {
-  const cid = document.getElementById('filtre-classe').value;
-  const sel = document.getElementById('sel-etudiant');
-  Array.from(sel.options).forEach(o => {
-    o.hidden = cid && o.dataset.classe && o.dataset.classe !== cid;
-  });
-  sel.value = '';
-}
-</script>
 {% endblock %}

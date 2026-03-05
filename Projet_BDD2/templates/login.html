@@ -1,55 +1,378 @@
 {% extends 'base.html' %}
-{% block title %}Connexion - EDE{% endblock %}
+{% block title %}Connexion - ENSAE{% endblock %}
 {% block content %}
 <style>
-.login-wrap{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;
-            background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)}
-.login-box{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:420px;
-           box-shadow:0 25px 60px rgba(0,0,0,.3)}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .big{font-size:42px;font-weight:900;color:#1a1a2e;letter-spacing:-2px}
-.login-logo .big span{color:#4f8ef7}
-.login-logo p{font-size:13px;color:#9ca3af;margin-top:4px}
-.login-box h2{font-size:17px;font-weight:700;margin-bottom:20px;color:#1a1a2e}
-.login-box label{display:block;font-size:12px;font-weight:600;margin-bottom:5px;
-                  color:#374151;text-transform:uppercase;letter-spacing:.4px}
-.login-box input{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:8px;
-                  font-size:14px;margin-bottom:14px;transition:border .15s}
-.login-box input:focus{outline:none;border-color:#4f8ef7;box-shadow:0 0 0 3px rgba(79,142,247,.12)}
-.btn-login{width:100%;padding:12px;background:#4f8ef7;color:#fff;border:none;border-radius:8px;
-           font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;margin-top:4px}
-.btn-login:hover{background:#3b7de8}
-.comptes{margin-top:24px;background:#f8fafc;border-radius:8px;padding:16px;font-size:12px}
-.comptes b{display:block;margin-bottom:8px;color:#374151}
-.compte-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e5e7eb;color:#6b7280}
-.compte-row:last-child{border:none}
-.compte-row code{font-size:11px;background:#e5e7eb;padding:2px 6px;border-radius:4px;color:#374151}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+/* ══════════════════════════════════
+   FOND PLEIN ÉCRAN avec img5 floutée
+══════════════════════════════════ */
+.login-scene{
+  min-height:calc(100vh - 56px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+  padding:24px 16px;
+}
+
+/* Couche 1 : photo floutée */
+.login-scene::before{
+  content:'';
+  position:absolute;inset:0;
+  background:url("{{ url_for('static', filename='images/img5.jpg') }}") center/cover no-repeat;
+  filter:blur(6px) brightness(.45) saturate(1.2);
+  transform:scale(1.06); /* évite les bords blancs du blur */
+  z-index:0;
+}
+/* Couche 2 : overlay dégradé pour lisibilité */
+.login-scene::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,
+    rgba(2,11,46,.82) 0%,
+    rgba(7,26,94,.75) 50%,
+    rgba(12,37,144,.7) 100%);
+  z-index:1;
+}
+
+/* ══════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════ */
+@keyframes cardReveal{
+  0%  {opacity:0;transform:translateY(32px) scale(.97);filter:blur(8px);}
+  60% {opacity:1;filter:blur(1px);}
+  100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0);}
+}
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0);}
+  50%    {transform:translateY(-6px);}
+}
+@keyframes gradientShift{
+  0%  {background-position:0%   50%;}
+  50% {background-position:100% 50%;}
+  100%{background-position:0%   50%;}
+}
+@keyframes pulseGlow{
+  0%,100%{box-shadow:0 0 0 0   rgba(56,132,255,.5);}
+  50%    {box-shadow:0 0 0 10px rgba(56,132,255,0);}
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+@keyframes dotPulse{
+  0%,100%{opacity:1;}
+  50%    {opacity:.3;}
+}
+
+/* ══════════════════════════════════
+   CARD
+══════════════════════════════════ */
+.login-card{
+  position:relative;z-index:2;
+  width:100%;max-width:440px;
+  background:rgba(255,255,255,.97);
+  border-radius:24px;
+  padding:40px 38px 36px;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,.45),
+    0  4px 16px rgba(0,0,0,.2),
+    inset 0 1px 0 rgba(255,255,255,.8);
+  animation:cardReveal .9s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* trait lumineux en haut */
+.login-card::before{
+  content:'';
+  position:absolute;top:0;left:10%;right:10%;
+  height:2px;border-radius:0 0 4px 4px;
+  background:linear-gradient(90deg,#3884ff,#6366f1,#38bdf8);
+  background-size:200% auto;
+  animation:gradientShift 4s linear infinite;
+}
+
+/* ── Logo section ── */
+.lc-logo{
+  display:flex;flex-direction:column;align-items:center;
+  margin-bottom:28px;
+  animation:fadeIn .6s ease .3s both;
+}
+.lc-logo-img{
+  width:72px;height:72px;
+  border-radius:18px;
+  object-fit:contain;
+  background:#fff;
+  padding:6px;
+  box-shadow:0 8px 28px rgba(56,132,255,.25),
+             0 2px  8px rgba(0,0,0,.1);
+  margin-bottom:12px;
+  animation:logoFloat 4s ease-in-out 1s infinite;
+}
+.lc-logo-fallback{
+  width:72px;height:72px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  box-shadow:0 8px 28px rgba(56,132,255,.3);
+  margin-bottom:12px;
+  animation:logoFloat 4s ease-in-out 1s infinite;
+}
+.lc-school{
+  font-family:'Sora',sans-serif;
+  font-size:22px;font-weight:900;
+  color:#0f172a;letter-spacing:-.5px;
+  line-height:1;
+}
+.lc-school span{
+  background:linear-gradient(90deg,#3884ff,#6366f1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.lc-tagline{
+  font-size:11.5px;color:#94a3b8;
+  margin-top:5px;letter-spacing:.03em;
+  text-align:center;
+}
+
+/* Divider */
+.lc-divider{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:24px;
+  animation:fadeIn .5s ease .45s both;
+}
+.lc-divider::before,.lc-divider::after{
+  content:'';flex:1;height:1px;background:#e2e8f0;
+}
+.lc-divider span{
+  font-size:11px;font-weight:600;color:#94a3b8;
+  text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;
+}
+
+/* ── Formulaire ── */
+.lc-form{animation:fadeIn .5s ease .5s both;}
+
+.lc-field{margin-bottom:16px;}
+.lc-field label{
+  display:block;
+  font-family:'Sora',sans-serif;
+  font-size:11px;font-weight:700;
+  color:#374151;
+  text-transform:uppercase;letter-spacing:.07em;
+  margin-bottom:6px;
+}
+
+/* input avec icône */
+.lc-input-wrap{position:relative;}
+.lc-input-wrap svg{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;color:#94a3b8;pointer-events:none;
+}
+.lc-input-wrap input{
+  width:100%;
+  padding:12px 14px 12px 40px;
+  border:1.5px solid #e2e8f0;
+  border-radius:10px;
+  font-size:14px;font-family:'Inter',sans-serif;
+  color:#0f172a;
+  background:#f8fafc;
+  transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  outline:none;
+}
+.lc-input-wrap input::placeholder{color:#cbd5e1;}
+.lc-input-wrap input:focus{
+  border-color:#3884ff;
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(56,132,255,.12);
+}
+
+/* Bouton submit */
+.lc-submit{
+  width:100%;
+  padding:13px;
+  margin-top:8px;
+  background:linear-gradient(270deg,#6366f1,#3884ff,#0ea5e9,#3884ff,#6366f1);
+  background-size:300% 300%;
+  animation:gradientShift 5s ease infinite;
+  color:#fff;
+  font-family:'Sora',sans-serif;
+  font-size:15px;font-weight:700;
+  border:none;border-radius:10px;cursor:pointer;
+  box-shadow:0 6px 24px rgba(56,132,255,.4);
+  transition:transform .25s ease, box-shadow .25s ease;
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.lc-submit::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.15),transparent 60%);
+  pointer-events:none;
+}
+.lc-submit:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 36px rgba(56,132,255,.55);
+}
+.lc-submit:active{transform:translateY(0);}
+.lc-submit svg{transition:transform .25s;}
+.lc-submit:hover svg{transform:translateX(4px);}
+
+/* Flash messages */
+.lc-alert{
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:13px;font-weight:500;
+  margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.lc-alert.danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.lc-alert.success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.lc-alert.warning{background:#fffbeb;color:#d97706;border:1px solid #fde68a;}
+
+/* ── Comptes de test ── */
+.lc-accounts{
+  margin-top:22px;
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:14px 16px;
+  animation:fadeIn .5s ease .65s both;
+}
+.lc-accounts-title{
+  display:flex;align-items:center;gap:7px;
+  font-family:'Sora',sans-serif;
+  font-size:11px;font-weight:700;
+  color:#64748b;
+  text-transform:uppercase;letter-spacing:.07em;
+  margin-bottom:10px;
+}
+.lc-accounts-title .dot{
+  width:5px;height:5px;border-radius:50%;
+  background:#3884ff;
+  animation:dotPulse 2s ease-in-out infinite;
+}
+.lc-account-row{
+  display:grid;grid-template-columns:auto 1fr;
+  align-items:center;gap:8px;
+  padding:7px 0;
+  border-bottom:1px dashed #e2e8f0;
+}
+.lc-account-row:last-child{border:none;padding-bottom:0;}
+.lc-role{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;color:#475569;white-space:nowrap;
+}
+.lc-cred{
+  font-size:10.5px;color:#64748b;
+  background:#e2e8f0;
+  padding:2px 8px;border-radius:5px;
+  font-family:monospace;letter-spacing:.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* sécurité note */
+.lc-secure{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  margin-top:18px;
+  font-size:11px;color:#94a3b8;
+  animation:fadeIn .5s ease .8s both;
+}
+.lc-secure svg{width:12px;height:12px;color:#94a3b8;}
 </style>
-<div class="login-wrap">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="big">EDE<span>.</span></div>
-      <p>Espace de Gestion des Etudiants</p>
+
+<div class="login-scene">
+  <div class="login-card">
+
+    <!-- ── Logo ENSAE ── -->
+    <div class="lc-logo">
+      <img
+        src="{{ url_for('static', filename='images/logo.jpg') }}"
+        alt="Logo ENSAE"
+        class="lc-logo-img"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+      >
+      <div class="lc-logo-fallback" style="display:none;">📊</div>
+      <div class="lc-school">EN<span>SAE</span></div>
+      <div class="lc-tagline">Application de Gestion des Étudiants</div>
     </div>
+
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for cat,msg in messages %}
-        <div class="alert alert-{{cat}}" style="margin-bottom:14px">{{ msg }}</div>
+      {% for cat, msg in messages %}
+        <div class="lc-alert {{ cat }}">
+          {% if cat == 'danger' %}⚠️{% elif cat == 'success' %}✅{% else %}ℹ️{% endif %}
+          {{ msg }}
+        </div>
       {% endfor %}
     {% endwith %}
-    <h2>Connexion</h2>
-    <form method="POST" action="/EDE/login">
-      <label>Adresse email</label>
-      <input type="email" name="email" placeholder="votre@email.ca" required autofocus>
-      <label>Mot de passe</label>
-      <input type="password" name="password" placeholder="••••••••" required>
-      <button type="submit" class="btn-login">Se connecter →</button>
+
+    <!-- Divider -->
+    <div class="lc-divider"><span>Connexion à votre espace</span></div>
+
+    <!-- ── Formulaire ── -->
+    <form method="POST" action="/EDE/login" class="lc-form">
+
+      <div class="lc-field">
+        <label>Adresse email</label>
+        <div class="lc-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <input type="email" name="email" placeholder="votre_identifiant@ede.sn" required autofocus>
+        </div>
+      </div>
+
+      <div class="lc-field">
+        <label>Mot de passe</label>
+        <div class="lc-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input type="password" name="password" placeholder="••••••••" required>
+        </div>
+      </div>
+
+      <button type="submit" class="lc-submit">
+        Se connecter
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+
     </form>
-    <div class="comptes">
-      <b>🔑 Comptes de test</b>
-      <div class="compte-row"><span>⚙️ Admin</span><code>admin@ede.ca / admin123</code></div>
-      <div class="compte-row"><span>📚 Prof</span><code>dupont@ede.ca / prof123</code></div>
-      <div class="compte-row"><span>🎓 Etudiant</span><code>alice@ede.ca / etudiant123</code></div>
+
+    <!-- ── Comptes de test ── -->
+    <div class="lc-accounts">
+      <div class="lc-accounts-title">
+        <span class="dot"></span>
+        Comptes de démonstration
+      </div>
+      <div class="lc-account-row">
+        <span class="lc-role">⚙️ Admin</span>
+        <span class="lc-cred">barry.thierno@ede.sn / admin123</span>
+      </div>
+      <div class="lc-account-row">
+        <span class="lc-role">📋 Enseignant</span>
+        <span class="lc-cred">thiaw@ede.sn / prof123</span>
+      </div>
+      <div class="lc-account-row">
+        <span class="lc-role">🎓 Étudiant</span>
+        <span class="lc-cred">ousmane.ndiaye@ede.sn / etudiant123</span>
+      </div>
     </div>
+
+    <!-- Mention sécurité -->
+    <div class="lc-secure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Connexion sécurisée · ENSAE Sénégal
+    </div>
+
   </div>
 </div>
 {% endblock %}

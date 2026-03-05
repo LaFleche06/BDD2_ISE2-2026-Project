@@ -215,39 +215,107 @@ def get_all_notes():
         fetchall=True)
 
 def add_note(matricule, matiere_id, prof_id, valeur, date_saisie):
+
     try:
         val = float(valeur)
     except Exception:
         return False, "Note invalide."
+
     if not (0 <= val <= 20):
         return False, "La note doit etre entre 0 et 20."
-    conn   = get_connection()
+
+    val = round(val, 2)
+
+    conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT COUNT(*) FROM NOTES WHERE ETUDIANT_matricule=? AND MATIERES_id_matiere=?",
-        matricule, matiere_id)
+
+    # VERIFIER que le professeur enseigne cette matiere dans la classe de l'etudiant
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM INTERVIENT i
+        JOIN ETUDIANT e ON e.Classe_id_classe = i.Classe_id_classe
+        WHERE i.PROFESSEUR_id_prof = ?
+        AND i.MATIERES_id_matiere = ?
+        AND e.matricule = ?
+    """, prof_id, matiere_id, matricule)
+
+    if cursor.fetchone()[0] == 0:
+        conn.close()
+        return False, "Vous n'enseignez pas cette matiere pour cet etudiant."
+
+    # verifier si une note existe deja
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM NOTES
+        WHERE ETUDIANT_matricule=? AND MATIERES_id_matiere=?
+    """, matricule, matiere_id)
+
     if cursor.fetchone()[0] > 0:
         conn.close()
         return False, "Une note existe deja pour cet etudiant dans cette matiere."
+
+    # insertion
     cursor.execute("""
-        INSERT INTO NOTES (MATIERES_id_matiere,PROFESSEUR_id_prof,ETUDIANT_matricule,valeur_note,date_saisie)
+        INSERT INTO NOTES
+        (MATIERES_id_matiere, PROFESSEUR_id_prof, ETUDIANT_matricule, valeur_note, date_saisie)
         VALUES (?,?,?,?,?)
     """, matiere_id, prof_id, matricule, val, date_saisie)
-    conn.commit(); conn.close()
+
+    conn.commit()
+    conn.close()
+
     return True, "Note ajoutee avec succes."
 
-def update_note(note_id, valeur):
+def update_note(note_id, valeur, prof_id):
+
     try:
         val = float(valeur)
     except Exception:
         return False, "Note invalide."
+
     if not (0 <= val <= 20):
         return False, "La note doit etre entre 0 et 20."
-    query("UPDATE NOTES SET valeur_note=? WHERE id_notes=?", val, note_id, commit=True)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE NOTES
+        SET valeur_note = ?
+        WHERE id_notes = ?
+        AND PROFESSEUR_id_prof = ?
+    """, val, note_id, prof_id)
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return False, "Modification non autorisee."
+
+    conn.close()
+
     return True, "Note modifiee."
 
-def delete_note(note_id):
-    query("DELETE FROM NOTES WHERE id_notes=?", note_id, commit=True)
+def delete_note(note_id, prof_id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        DELETE FROM NOTES
+        WHERE id_notes = ?
+        AND PROFESSEUR_id_prof = ?
+    """, note_id, prof_id)
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+        conn.close()
+        return False, "Suppression non autorisee."
+
+    conn.close()
+
+    return True, "Note supprimee."
 
 # ── STATISTIQUES & VUES ───────────────────────────────────────────────────────
 def get_classement_classe(classe_id):

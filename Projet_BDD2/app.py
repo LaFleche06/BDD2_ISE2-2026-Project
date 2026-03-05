@@ -134,7 +134,14 @@ def prof_notes():
     classe_id= request.args.get('classe_id', type=int) or (classes[0]['id_classe'] if classes else None)
     etudiants= db.get_etudiants_by_classe(classe_id) if classe_id else []
     matieres = db.get_matieres_professeur(session['entity_id'])
-    notes    = db.get_notes_classe(classe_id) if classe_id else []
+    prof_id = session['entity_id']
+    notes = db.query("""
+                     SELECT *
+                     FROM VUE_NOTES_COMPLETES
+                     WHERE id_classe = ?
+                       AND id_prof = ?
+                     ORDER BY nom_etudiant, nom_matiere
+                     """, classe_id, prof_id, fetchall=True) if classe_id else []
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -149,11 +156,16 @@ def prof_notes():
         elif action == 'modifier':
             ok, msg = db.update_note(
                 request.form.get('note_id', type=int),
-                request.form.get('valeur_note'))
+                request.form.get('valeur_note'),
+                session['entity_id']
+            )
             flash(msg, 'success' if ok else 'danger')
         elif action == 'supprimer':
-            db.delete_note(request.form.get('note_id', type=int))
-            flash('Note supprimee.', 'success')
+            ok, msg = db.delete_note(
+                request.form.get('note_id', type=int),
+                session['entity_id']
+            )
+            flash(msg, 'success' if ok else 'danger')
         return redirect(url_for('prof_notes', classe_id=classe_id))
 
     return render_template('prof/notes.html',
@@ -398,11 +410,16 @@ def admin_notes():
         elif action == 'modifier':
             ok, msg = db.update_note(
                 request.form.get('note_id', type=int),
-                request.form.get('valeur_note'))
+                request.form.get('valeur_note'),
+                request.form.get('prof_id', type=int)
+            )
             flash(msg, 'success' if ok else 'danger')
         elif action == 'supprimer':
-            db.delete_note(request.form.get('note_id', type=int))
-            flash('Note supprimee.', 'success')
+            ok, msg = db.delete_note(
+                request.form.get('note_id', type=int),
+                request.form.get('prof_id', type=int)
+            )
+            flash(msg, 'success' if ok else 'danger')
         return redirect(url_for('admin_notes', classe_id=classe_id))
 
     return render_template('admin/notes.html',

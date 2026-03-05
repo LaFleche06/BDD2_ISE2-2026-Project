@@ -176,7 +176,7 @@ SELECT
     AS DECIMAL(5,2)) AS moyenne_generale,
     CASE
         WHEN SUM(n.valeur_note * m.coefficient_matiere)
-             / NULLIF(SUM(m.coefficient_matiere), 0) >= 10
+             / NULLIF(SUM(m.coefficient_matiere), 0) >= 12
         THEN 'Admis' ELSE 'Ajourne'
     END AS decision
 FROM ETUDIANT  e
@@ -254,51 +254,111 @@ SELECT
 GO
 
 -- ============================================================
--- DONNEES DE TEST
+-- DONNEES 
 -- ============================================================
+
+
+-- UTILISATEURS
 INSERT INTO UTILISATEUR (email_utilisateur, mot_de_passe, role_utilisateur) VALUES
-('admin@ede.ca',   'TEMP', 'admin'),
-('dupont@ede.ca',  'TEMP', 'professeur'),
-('martin@ede.ca',  'TEMP', 'professeur'),
-('leblanc@ede.ca', 'TEMP', 'professeur'),
-('alice@ede.ca',   'TEMP', 'etudiant'),
-('marc@ede.ca',    'TEMP', 'etudiant'),
-('sophie@ede.ca',  'TEMP', 'etudiant'),
-('karim@ede.ca',   'TEMP', 'etudiant');
+('barry.thierno@ede.sn','TEMP','admin'),
+
+('thiaw@ede.sn','TEMP','professeur'),
+('ndiaye.moussa@ede.sn','TEMP','professeur'),
+('ba.aissatou@ede.sn','TEMP','professeur'),
+('sarr.abdou@ede.sn','TEMP','professeur'),
+
+('ousmane.ndiaye@ede.sn','TEMP','etudiant'),
+('fatou.diop@ede.sn','TEMP','etudiant'),
+('mamadou.fall@ede.sn','TEMP','etudiant'),
+('awa.sarr@ede.sn','TEMP','etudiant'),
+('cheikh.kane@ede.sn','TEMP','etudiant'),
+('ibrahima.sy@ede.sn','TEMP','etudiant');
 GO
+
+-- ADMINISTRATEUR
 INSERT INTO ADMINISTRATEUR (UTILISATEUR_id_utilisateur,nom,prenom,telephone_admin)
-VALUES (1,'Admin','Principal','0600000000');
+VALUES
+(1,'Barry','Thierno Ibrahima','+221770000000');
 GO
+
+-- PROFESSEURS
 INSERT INTO PROFESSEUR (UTILISATEUR_id_utilisateur,nom_prof,prenom_prof,telephone_prof) VALUES
-(2,'Dupont','Jean','0611111111'),
-(3,'Martin','Marie','0622222222'),
-(4,'Leblanc','Pierre','0633333333');
+(2,'Thiaw','Mamadou','+221771111111'),
+(3,'Ndiaye','Moussa','+221772222222'),
+(4,'Ba','Aissatou','+221773333333'),
+(5,'Sarr','Abdou','+221774444444');
 GO
+
+-- CLASSES (ISE)
 INSERT INTO Classe (libelle_classe,annee_scolaire) VALUES
-('INF-L1','2024-2025'),('INF-L2','2024-2025'),('RT-L1','2024-2025');
+('ISE1','2025-2026'),
+('ISE2','2025-2026'),
+('ISE3','2025-2026');
 GO
+
+-- MATIERES (programme plausible ISE)
 INSERT INTO MATIERES (nom_matiere,coefficient_matiere,volume_horaire) VALUES
-('Algorithmique',3.00,'45h'),('Bases de Donnees',3.00,'45h'),
-('Reseaux',2.00,'30h'),('Mathematiques',4.00,'60h'),
-('Developpement Web',2.00,'30h'),('Programmation Python',3.00,'45h');
+('Algorithmique',3,'45h'),
+('Bases de Donnees',3,'45h'),
+('Analyse Mathematique',4,'60h'),
+('Algebre Lineaire',3,'45h'),
+('Developpement Web',2,'30h'),
+('Theorie des Tests',3,'45h'),
+('Econometrie',4,'60h'),
+('Statistiques Descriptives',3,'45h'),
+('Probabilites',3,'45h'),
+('Machine Learning',3,'45h');
 GO
+
+-- ETUDIANTS SENEGALAIS
 INSERT INTO ETUDIANT (Classe_id_classe,UTILISATEUR_id_utilisateur,nom,prenom,telephone_etudiant) VALUES
-(1,5,'Tremblay','Alice','0644444444'),
-(1,6,'Bouchard','Marc','0655555555'),
-(2,7,'Gagnon','Sophie','0666666666'),
-(3,8,'Diallo','Karim','0677777777');
+(1,6,'Ndiaye','Ousmane','+221776543210'),
+(1,7,'Diop','Fatou','+221777654321'),
+(2,8,'Fall','Mamadou','+221778765432'),
+(2,9,'Sarr','Awa','+221779876543'),
+(3,10,'Kane','Cheikh','+221770112233'),
+(3,11,'Sy','Ibrahima','+221771223344');
 GO
+
+-- AFFECTATION PROFESSEUR / MATIERE / CLASSE
 INSERT INTO INTERVIENT (PROFESSEUR_id_prof,MATIERES_id_matiere,Classe_id_classe) VALUES
-(1,1,1),(1,2,1),(1,5,1),(2,4,1),(2,4,2),(3,3,3),(1,6,2);
+(1,1,1),
+(1,2,1),
+(2,3,1),
+(2,4,2),
+(3,5,2),
+(3,6,3),
+(4,7,3),
+(4,8,1),
+(2,9,2),
+(1,10,3);
 GO
+
+-- NOTES DES ETUDIANTS
 INSERT INTO NOTES (MATIERES_id_matiere,PROFESSEUR_id_prof,ETUDIANT_matricule,valeur_note,date_saisie) VALUES
-(1,1,1,14.50,'2024-11-01'),(2,1,1,16.00,'2024-11-02'),
-(4,2,1,13.00,'2024-11-03'),(5,1,1,15.50,'2024-11-04'),
-(1,1,2,9.00,'2024-11-01'),(2,1,2,11.50,'2024-11-02'),(4,2,2,8.00,'2024-11-03'),
-(4,2,3,17.00,'2024-11-01'),(6,1,3,14.00,'2024-11-02'),
-(3,3,4,12.50,'2024-11-01');
+
+(1,1,1,15.5,'2025-03-01'),
+(2,1,1,14,'2025-03-02'),
+(3,2,1,13.5,'2025-03-03'),
+
+(1,1,2,12,'2025-03-01'),
+(2,1,2,13,'2025-03-02'),
+(3,2,2,11,'2025-03-03'),
+
+(4,2,3,14,'2025-03-01'),
+(5,3,3,15,'2025-03-02'),
+
+(4,2,4,10,'2025-03-01'),
+(5,3,4,11,'2025-03-02'),
+
+(7,4,5,16,'2025-03-01'),
+(6,3,5,15,'2025-03-02'),
+
+(7,4,6,13,'2025-03-01'),
+(10,1,6,14,'2025-03-02');
 GO
 
 PRINT 'Base EtudiantDB creee avec succes!';
+PRINT 'Donnees adaptees au programme ISE';
 PRINT 'Etape suivante : python setup_passwords.py';
 GO

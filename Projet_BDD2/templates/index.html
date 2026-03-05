@@ -1,26 +1,488 @@
 {% extends 'base.html' %}
-{% block title %}Accueil - EDE{% endblock %}
+{% block title %}Accueil - ENSAE{% endblock %}
 {% block content %}
 <style>
-.hero{text-align:center;padding:60px 20px;max-width:700px;margin:0 auto}
-.hero h1{font-size:48px;font-weight:900;letter-spacing:-2px;margin-bottom:12px}
-.hero h1 span{color:#4f8ef7}
-.hero p{font-size:16px;color:#6b7280;margin-bottom:32px;line-height:1.7}
-.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;
-          max-width:700px;margin:0 auto}
-.feat{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;text-align:center}
-.feat .ico{font-size:32px;margin-bottom:10px}
-.feat h3{font-weight:700;margin-bottom:6px}
-.feat p{font-size:12px;color:#9ca3af}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800;900&family=Inter:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+/* ══════════════════════
+   RESET GLOBAL PAGE
+══════════════════════ */
+.ensae-wrap{
+  font-family:'Inter',sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;          /* occupe exactement la fenêtre */
+  overflow:hidden;       /* pas de scroll du tout        */
+}
+
+/* ══════════════════════
+   HERO  —  flex:1 prend tout l'espace dispo sauf les cards
+══════════════════════ */
+.ensae-hero{
+  display:grid;
+  grid-template-columns:52% 48%;
+  flex:1;
+  min-height:0;           /* autorise la compression flex */
+  background:linear-gradient(135deg,#020b2e 0%,#071a5e 50%,#0c2590 100%);
+  position:relative;
+  overflow:hidden;
+}
+
+/* dot grid */
+.ensae-hero::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+/* glows */
+.glow1,.glow2{position:absolute;border-radius:50%;pointer-events:none;z-index:0;}
+.glow1{width:520px;height:520px;top:-160px;left:-60px;
+  background:radial-gradient(circle,rgba(56,132,255,.25) 0%,transparent 65%);}
+.glow2{width:380px;height:380px;bottom:-100px;right:20px;
+  background:radial-gradient(circle,rgba(99,102,241,.25) 0%,transparent 65%);}
+
+/* ══════════════════════
+   ANIMATIONS
+══════════════════════ */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(22px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+@keyframes floatBadge{
+  0%,100%{transform:translateY(0);}
+  50%    {transform:translateY(-5px);}
+}
+/* EFFET TITRE : blur → clarity */
+@keyframes blurReveal{
+  0%  {opacity:0; filter:blur(18px); transform:translateY(16px) scale(.98);}
+  60% {opacity:1; filter:blur(2px);  transform:translateY(2px)  scale(1);}
+  100%{opacity:1; filter:blur(0px);  transform:translateY(0)    scale(1);}
+}
+@keyframes gradientFlow{
+  0%  {background-position:0%   50%;}
+  50% {background-position:100% 50%;}
+  100%{background-position:0%   50%;}
+}
+@keyframes pulseRing{
+  0%,100%{box-shadow:0 0 0 0   rgba(56,132,255,.55);}
+  50%    {box-shadow:0 0 0 10px rgba(56,132,255,0);}
+}
+@keyframes scrollRow{to{transform:translateX(-50%);}}
+@keyframes riseCard{
+  from{opacity:0;transform:translateY(18px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+@keyframes shimmerBtn{
+  0%  {background-position:0%   50%;}
+  50% {background-position:100% 50%;}
+  100%{background-position:0%   50%;}
+}
+
+/* ══════════════════════
+   LEFT PANEL
+══════════════════════ */
+.hero-left{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;
+  justify-content:center;
+  padding:0 44px 0 56px;
+  gap:0;
+}
+
+/* ── Logo badge ── */
+.logo-badge{
+  display:inline-flex;align-items:center;gap:13px;
+  background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.16);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-radius:14px;
+  padding:9px 18px 9px 9px;
+  width:fit-content;
+  margin-bottom:20px;
+  animation:fadeUp .5s ease both, floatBadge 5s ease-in-out 1.2s infinite;
+}
+.logo-badge img{
+  width:50px;height:50px;
+  border-radius:10px;
+  object-fit:contain;
+  background:#fff;
+  padding:4px;
+  flex-shrink:0;
+  display:block;
+}
+/* fallback si image absente */
+.logo-badge .logo-fallback{
+  width:50px;height:50px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.lb-name{
+  font-family:'Sora',sans-serif;
+  font-size:19px;font-weight:800;
+  color:#fff;letter-spacing:-.3px;line-height:1.1;
+}
+.lb-name small{
+  display:block;font-size:9.5px;font-weight:500;
+  color:rgba(255,255,255,.45);
+  letter-spacing:.09em;text-transform:uppercase;margin-top:2px;
+}
+
+/* ── Pill ── */
+.hero-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(56,132,255,.16);
+  border:1px solid rgba(56,132,255,.42);
+  color:#93c5fd;font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 14px;border-radius:100px;
+  width:fit-content;margin-bottom:16px;
+  animation:fadeUp .5s ease .12s both;
+}
+.pill-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#4f8ef7;
+  animation:pulseRing 2.2s ease-in-out infinite;
+}
+
+/* ── Titre avec effet blur→clarity ── */
+.hero-title{
+  font-family:'Sora',sans-serif;
+  font-size:clamp(20px,2.3vw,34px);
+  font-weight:900;
+  line-height:1.22;
+  color:#fff;
+  margin-bottom:14px;
+  /* délai pour laisser le badge apparaître d'abord */
+  animation:blurReveal 1.1s cubic-bezier(.16,1,.3,1) .3s both;
+}
+.ensae-accent{
+  display:inline-block;
+  background:linear-gradient(90deg,#60a5fa,#a78bfa,#38bdf8,#60a5fa);
+  background-size:260% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:gradientFlow 4s linear infinite;
+}
+
+/* ── Sous-titre ── */
+.hero-sub{
+  font-size:13.5px;
+  color:rgba(255,255,255,.52);
+  line-height:1.82;
+  max-width:400px;
+  margin-bottom:30px;
+  animation:fadeUp .6s ease .7s both;
+}
+.hero-sub strong{color:rgba(255,255,255,.88);font-weight:600;}
+
+/* ── Bouton Se connecter ── */
+.cta-wrap{
+  animation:fadeUp .6s ease .85s both;
+}
+.btn-login{
+  display:inline-flex;align-items:center;gap:12px;
+  background:linear-gradient(270deg,#6366f1,#3884ff,#0ea5e9,#3884ff,#6366f1);
+  background-size:300% 300%;
+  animation:shimmerBtn 5s ease infinite;
+  color:#fff;
+  font-family:'Sora',sans-serif;
+  font-size:15px;font-weight:700;
+  padding:14px 40px;
+  border-radius:100px;
+  text-decoration:none;
+  box-shadow:0 8px 32px rgba(56,132,255,.5),
+             0 2px 8px  rgba(0,0,0,.2);
+  transition:transform .28s ease, box-shadow .28s ease;
+  position:relative;overflow:hidden;
+}
+.btn-login::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.18),transparent 60%);
+  border-radius:100px;
+  pointer-events:none;
+}
+.btn-login:hover{
+  transform:translateY(-3px) scale(1.05);
+  box-shadow:0 18px 50px rgba(56,132,255,.65),
+             0 4px 12px rgba(0,0,0,.25);
+  color:#fff;text-decoration:none;
+}
+.btn-login svg{transition:transform .28s ease;}
+.btn-login:hover svg{transform:translateX(5px);}
+
+/* ══════════════════════
+   RIGHT PANEL — images scrollantes
+══════════════════════ */
+.hero-right{
+  position:relative;z-index:2;
+  display:flex;align-items:center;
+  padding:16px 24px 16px 0;
+  overflow:hidden;
+}
+.hero-right::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:52px;z-index:5;
+  background:linear-gradient(to right,#071a5e,transparent);pointer-events:none;
+}
+.hero-right::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;width:52px;z-index:5;
+  background:linear-gradient(to left,#0c2590,transparent);pointer-events:none;
+}
+
+.img-grid{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;
+  gap:8px;overflow:hidden;
+}
+
+.img-row{display:flex;gap:8px;width:max-content;}
+.img-row.r1{animation:scrollRow 30s linear infinite;}
+.img-row.r2{animation:scrollRow 23s linear infinite reverse;}
+.img-row.r3{animation:scrollRow 37s linear infinite;}
+
+.img-tile{
+  flex-shrink:0;
+  border-radius:11px;overflow:hidden;
+  border:1.5px solid rgba(255,255,255,.13);
+  transition:transform .35s ease,border-color .35s ease,box-shadow .35s ease;
+  /* taille adaptée pour remplir 3 rangées dans la hauteur dispo */
+  width:165px;height:calc((100vh - 168px - 150px) / 3 - 12px);
+  min-height:85px;max-height:130px;
+}
+.img-tile:hover{
+  transform:scale(1.07);
+  border-color:rgba(96,165,250,.75);
+  box-shadow:0 8px 26px rgba(56,132,255,.4);
+  z-index:6;position:relative;
+}
+.img-tile img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .4s ease;
+}
+.img-tile:hover img{transform:scale(1.1);}
+
+/* ══════════════════════
+   CARDS  —  hauteur fixe en bas
+══════════════════════ */
+.ensae-cards{
+  flex-shrink:0;
+  background:#eef2ff;
+  padding:18px 48px 20px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  border-top:1px solid #dde5f4;
+}
+
+.r-card{
+  background:#fff;
+  border-radius:18px;
+  padding:20px 22px 18px;
+  border:1px solid #e2e8f0;
+  display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+  animation:riseCard .55s ease both;
+}
+.r-card:nth-child(2){animation-delay:.1s;}
+.r-card:nth-child(3){animation-delay:.2s;}
+
+.r-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;
+  height:3px;border-radius:18px 18px 0 0;
+  opacity:0;transition:opacity .3s;
+}
+.r-card.c-blue::before  {background:linear-gradient(90deg,#3884ff,#60a5fa);}
+.r-card.c-violet::before{background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+.r-card.c-cyan::before  {background:linear-gradient(90deg,#0891b2,#22d3ee);}
+
+.r-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 16px 44px rgba(56,132,255,.13);
+  border-color:rgba(56,132,255,.22);
+}
+.r-card:hover::before{opacity:1;}
+
+.c-icon{
+  width:46px;height:46px;border-radius:13px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:12px;
+  transition:transform .3s ease;
+}
+.r-card:hover .c-icon{transform:scale(1.12) rotate(-5deg);}
+.c-blue  .c-icon{background:linear-gradient(135deg,#dbeafe,#bfdbfe);}
+.c-violet .c-icon{background:linear-gradient(135deg,#ede9fe,#ddd6fe);}
+.c-cyan  .c-icon{background:linear-gradient(135deg,#cffafe,#a5f3fc);}
+
+.c-title{
+  font-family:'Sora',sans-serif;
+  font-size:15px;font-weight:800;color:#0f172a;margin-bottom:5px;
+}
+.c-desc{
+  font-size:12px;color:#64748b;line-height:1.65;
+  margin-bottom:14px;flex:1;
+}
+.c-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;
+  text-decoration:none;transition:gap .2s ease;width:fit-content;
+}
+.c-blue  .c-btn{color:#3884ff;}
+.c-violet .c-btn{color:#7c3aed;}
+.c-cyan  .c-btn{color:#0891b2;}
+.c-btn:hover{gap:10px;text-decoration:none;}
+.c-num{
+  position:absolute;bottom:-10px;right:10px;
+  font-family:'Sora',sans-serif;font-size:64px;font-weight:900;
+  color:rgba(0,0,0,.03);line-height:1;pointer-events:none;user-select:none;
+}
+
+/* ══════════════════════
+   RESPONSIVE
+══════════════════════ */
+@media(max-width:960px){
+  .ensae-wrap{height:auto;overflow:auto;}
+  .ensae-hero{grid-template-columns:1fr;height:auto;}
+  .hero-right{height:200px;}
+  .hero-left{padding:36px 24px 24px;}
+  .ensae-cards{grid-template-columns:1fr;padding:20px 16px;}
+}
 </style>
-<div class="hero">
-  <h1>Bienvenue sur <span>EDE</span></h1>
-  <p>Plateforme de gestion des etudiants, notes et resultats.<br>Connectez-vous pour acceder a votre espace.</p>
-  <a href="/EDE/login" class="btn btn-primary" style="font-size:15px;padding:12px 28px">Se connecter →</a>
-</div>
-<div class="features">
-  <div class="feat"><div class="ico">🎓</div><h3>Etudiants</h3><p>Consultez vos notes et resultats</p></div>
-  <div class="feat"><div class="ico">📚</div><h3>Professeurs</h3><p>Saisie et gestion des notes</p></div>
-  <div class="feat"><div class="ico">⚙️</div><h3>Administration</h3><p>Gestion complete du systeme</p></div>
+
+<div class="ensae-wrap">
+
+  <!-- ══ HERO ══ -->
+  <section class="ensae-hero">
+    <div class="glow1"></div>
+    <div class="glow2"></div>
+
+    <!-- GAUCHE -->
+    <div class="hero-left">
+
+      <!-- Logo -->
+      <div class="logo-badge">
+        <img
+          src="{{ url_for('static', filename='images/logo.jpg') }}"
+          alt="Logo ENSAE"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+        >
+        <div class="logo-fallback" style="display:none;">📊</div>
+        <div class="lb-name">
+          ENSAE
+          <small>École Nationale de Statistique et de l'Analyse Economique Pierre Ndiaye</small>
+        </div>
+      </div>
+
+      <!-- Pill -->
+      <div class="hero-pill">
+        <span class="pill-dot"></span>
+        Application de gestion étudiante
+      </div>
+
+      <!-- Titre — effet blur → clarity -->
+      <h1 class="hero-title">
+        Bienvenue sur l'application<br>
+        de Gestion des Étudiants<br>
+        de l'<span class="ensae-accent">ENSAE</span>
+      </h1>
+
+      <!-- Objectif -->
+      <p class="hero-sub">
+        Suivez vos <strong>notes et résultats</strong>, gérez les cours et parcours académiques.<br>
+        Une plateforme centralisée pour <strong>étudiants</strong>,
+        <strong>enseignants</strong> et <strong>administration</strong>.
+      </p>
+
+      <!-- CTA -->
+      <div class="cta-wrap">
+        <a href="/EDE/login" class="btn-login">
+          Se connecter
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- DROITE : 3 rangées auto-scroll -->
+    <div class="hero-right">
+      <div class="img-grid">
+
+        <div class="img-row r1">
+          {% for n in ['img1','img2','img3','img4','img5','img6','img7','img8','img9','img10','img11','img12','img13','img14'] %}
+          <div class="img-tile"><img src="{{ url_for('static', filename='images/'~n~'.jpg') }}" alt="" onerror="this.parentElement.style.background='linear-gradient(135deg,#1e3a5f,#2563eb)';this.remove()"></div>
+          {% endfor %}
+          {% for n in ['img1','img2','img3','img4','img5','img6','img7','img8','img9','img10','img11','img12','img13','img14'] %}
+          <div class="img-tile"><img src="{{ url_for('static', filename='images/'~n~'.jpg') }}" alt="" onerror="this.parentElement.style.background='linear-gradient(135deg,#1e3a5f,#2563eb)';this.remove()"></div>
+          {% endfor %}
+        </div>
+
+        <div class="img-row r2">
+          {% for n in ['img9','img14','img3','img8','img1','img13','img6','img11','img4','img7','img2','img12','img5','img10'] %}
+          <div class="img-tile"><img src="{{ url_for('static', filename='images/'~n~'.jpg') }}" alt="" onerror="this.parentElement.style.background='linear-gradient(135deg,#1e1b4b,#7c3aed)';this.remove()"></div>
+          {% endfor %}
+          {% for n in ['img9','img14','img3','img8','img1','img13','img6','img11','img4','img7','img2','img12','img5','img10'] %}
+          <div class="img-tile"><img src="{{ url_for('static', filename='images/'~n~'.jpg') }}" alt="" onerror="this.parentElement.style.background='linear-gradient(135deg,#1e1b4b,#7c3aed)';this.remove()"></div>
+          {% endfor %}
+        </div>
+
+        <div class="img-row r3">
+          {% for n in ['img5','img10','img2','img7','img12','img4','img9','img14','img3','img8','img1','img13','img6','img11'] %}
+          <div class="img-tile"><img src="{{ url_for('static', filename='images/'~n~'.jpg') }}" alt="" onerror="this.parentElement.style.background='linear-gradient(135deg,#083344,#0891b2)';this.remove()"></div>
+          {% endfor %}
+          {% for n in ['img5','img10','img2','img7','img12','img4','img9','img14','img3','img8','img1','img13','img6','img11'] %}
+          <div class="img-tile"><img src="{{ url_for('static', filename='images/'~n~'.jpg') }}" alt="" onerror="this.parentElement.style.background='linear-gradient(135deg,#083344,#0891b2)';this.remove()"></div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══ CARDS ══ -->
+  <section class="ensae-cards">
+
+    <div class="r-card c-blue">
+      <div class="c-icon">🎓</div>
+      <div class="c-title">Étudiants</div>
+      <p class="c-desc">Consultez vos notes de TD, TP et examens. Suivez votre relevé et l'historique de votre parcours académique.</p>
+      <a href="/EDE/login" class="c-btn">Accéder à mon espace
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <div class="c-num">01</div>
+    </div>
+
+    <div class="r-card c-violet">
+      <div class="c-icon">📋</div>
+      <div class="c-title">Enseignants</div>
+      <p class="c-desc">Saisissez et validez les notes. Gérez vos modules et suivez la progression des promotions.</p>
+      <a href="/EDE/login" class="c-btn">Accéder à mon espace
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <div class="c-num">02</div>
+    </div>
+
+    <div class="r-card c-cyan">
+      <div class="c-icon">⚙️</div>
+      <div class="c-title">Administration</div>
+      <p class="c-desc">Gérez les comptes, filières, délibérations et générez les rapports de l'établissement.</p>
+      <a href="/EDE/login" class="c-btn">Accéder à mon espace
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <div class="c-num">03</div>
+    </div>
+
+  </section>
+
 </div>
 {% endblock %}
