@@ -22,6 +22,11 @@ app = FastAPI()
 def test_connection(db: Session = Depends(get_db)):
     try:
         result = db.execute(text("SELECT @@VERSION")).fetchone()
+        if result is None:
+            return {
+                "status": "Error",
+                "message": "Aucun résultat retourné"
+            }
         return {
             "status": "Success",
             "message": "Connexion à AWS RDS réussie !",
