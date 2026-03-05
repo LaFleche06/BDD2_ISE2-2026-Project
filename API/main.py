@@ -14,7 +14,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .database import get_db 
+from .database.session import get_db 
 
 app = FastAPI()
 
