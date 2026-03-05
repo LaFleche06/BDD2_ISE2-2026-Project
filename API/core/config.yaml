@@ -1,0 +1,6 @@
+# config.yaml
+security:
+  algorithm: "HS256"
+  token_expire_minutes: 480        # 8 heures
+bcrypt:
+  rounds: 12                       # facteur de salage pour bcrypt

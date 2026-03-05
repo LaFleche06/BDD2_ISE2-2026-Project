@@ -14,6 +14,8 @@ from jose import jwt
 import os
 from dotenv import load_dotenv
 
+from core.config import config
+
 
 
 load_dotenv()
@@ -22,10 +24,10 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # Algorithme de signature des JWT
-ALGORITHM = "HS256"
+ALGORITHM = config["security"]["algorithm"]
 
 # Durée de validité du token
-TOKEN_EXPIRE_MINUTES = 60 * 8
+TOKEN_EXPIRE_MINUTES = config["security"]["token_expire_minutes"]
 
 
 # ─── Gestion des mots de passe ───────────────────────────
