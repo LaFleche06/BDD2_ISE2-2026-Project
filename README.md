@@ -177,15 +177,7 @@ def get_conn_string():
 ```powershell
 python setup_passwords.py
 ```
-
-Résultat attendu :
-```
-[OK] admin@ede.ca
-[OK] dupont@ede.ca
-[OK] alice@ede.ca
-...
-8/8 mots de passe mis a jour.
-```
+Vous allez voir les mots de passe définis par défaut
 
 ### 7. Lancer l'application
 
@@ -232,16 +224,7 @@ http://localhost:5000/EDE/index
 
 ## 🔑 Comptes de test
 
-| Rôle | Email | Mot de passe |
-|------|-------|--------------|
-| ⚙️ Administrateur | `admin@ede.ca` | `admin123` |
-| 📚 Professeur | `dupont@ede.ca` | `prof123` |
-| 📚 Professeur | `martin@ede.ca` | `prof123` |
-| 📚 Professeur | `leblanc@ede.ca` | `prof123` |
-| 🎓 Étudiant | `alice@ede.ca` | `etudiant123` |
-| 🎓 Étudiant | `marc@ede.ca` | `etudiant123` |
-| 🎓 Étudiant | `sophie@ede.ca` | `etudiant123` |
-| 🎓 Étudiant | `karim@ede.ca` | `etudiant123` |
+
 
 ---
 
