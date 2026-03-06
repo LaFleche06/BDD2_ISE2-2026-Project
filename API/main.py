@@ -14,9 +14,17 @@ from fastapi import FastAPI, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .database.session import get_db 
+from database.session import get_db,engine
 
-app = FastAPI()
+from models.models import Base                 
+from routers import auth
+
+app = FastAPI(title="version en dev : API BDD2")
+
+# Crée les tables si elles n'existent pas
+Base.metadata.create_all(bind=engine)         
+
+app.include_router(auth.router) 
 
 @app.get("/test-aws")
 def test_connection(db: Session = Depends(get_db)):
@@ -36,4 +44,4 @@ def test_connection(db: Session = Depends(get_db)):
         return {
             "status": "Error",
             "message": str(e)
-        }
+        }             
