@@ -1,0 +1,72 @@
+# Ce workflow se déclenche sur CHAQUE PUSH, quelle que soit la branche.
+# Il installe les dépendances et lance tous les tests pytest.
+#
+# Variables d'environnement  (DATABASE_URL, SECRET_KEY) :
+#   → Elles sont injectées ici avec des valeurs factices pour les tests.
+#   → Les tests utilisent SQLite en mémoire, donc DATABASE_URL
+#     n'est jamais vraiment utilisée pour se connecter à AWS.
+#   → En production, configurer les vraies valeurs dans :
+#      GitHub → Settings → Secrets and variables → Actions
+
+name: Tests
+
+on:
+  push:
+    branches: ["**"]     # toutes les branches sans exception
+  pull_request:
+    branches: ["**"]     # aussi sur les PR
+
+jobs:
+  test:
+    name: Pytest — Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # Tester sur plusieurs versions de Python pour détecter
+        # les incompatibilités au plus tôt
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      # 1. Récupère le code source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Configure Python
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 3. Cache pip pour accélérer les runs suivants
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-${{ matrix.python-version }}-
+
+      # 4. Installe les dépendances de l'application
+      - name: Installer les dépendances applicatives
+        run: pip install -r requirements.txt
+
+      # 5. Installe les dépendances de test
+      - name: Installer les dépendances de test
+        run: pip install -r requirements-test.txt
+
+      # 6. Lance les tests
+      #    Les env vars sont factices : les tests utilisent SQLite en mémoire.
+      #    SECRET_KEY doit être non-vide pour que jose/JWT fonctionne.
+      - name: Lancer les tests
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
+          SECRET_KEY: "cle-factice-pour-ci-cd-github-actions"
+        run: pytest tests/ -v --tb=short --cov=API --cov-report=term-missing
+
+      # 7. (Optionnel) Publie le rapport de couverture sur GitHub
+      #    Décommenter si vous utilisez Codecov (https://codecov.io)
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}

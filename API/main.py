@@ -1,47 +1,117 @@
 """
-API exposant un endpoint de test
-permettant de vérifier la connexion à une base de données AWS RDS.
+Point d'entrée de l'API
 
-L’endpoint /test-aws :
-- Injecte une session SQLAlchemy
-- Exécute une requête SQL simple
-- Retourne la version du serveur si la connexion réussit
-- Retourne un message d’erreur en cas d’échec
+Routers :
+    /auth           => authentification
+    /admin          => espace administrateur
+        admin_classes_matieres  => CRUD classes & matières
+        utilisateurs      => CRUD étudiants, professeurs, interventions
+        stats             => statistiques, classements, sauvegarde résultats
 
+À venir :
+    /prof           => espace professeur
+    /etudiant       => espace étudiant
 """
 
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from database.session import get_db,engine
+from database.session import get_db, engine
+from models.models import Base
 
-from models.models import Base                 
 from routers import auth
+from routers.admin import admin_classes_matieres
+from routers.admin import admin_utilisateurs
+from routers.admin import admin_stats
 
-app = FastAPI(title="version en dev : API BDD2")
+# ── Application ───────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="API Gestion Scolaire",
+    description="""
+## API REST — Gestion Scolaire
 
-# Crée les tables si elles n'existent pas
-Base.metadata.create_all(bind=engine)         
+### Espaces disponibles
 
-app.include_router(auth.router) 
+| Espace        | Rôle requis | Description                                      |
+|---------------|-------------|--------------------------------------------------|
+| `/auth`       | —           | Authentification JWT                             |
+| `/admin`      | `admin`     | Gestion complète : classes, profs, étudiants...  |
+| `/prof`       | `prof`      | Saisie et consultation des notes *(à venir)*     |
+| `/etudiant`   | `etudiant`  | Dashboard et consultation des notes *(à venir)*  |
 
-@app.get("/test-aws")
+### Authentification
+Toutes les routes protégées nécessitent un token JWT dans le header :
+```
+Authorization: Bearer <token>
+```
+Obtenez un token via **POST /auth/login**.
+    """,
+    version="0.2.0",
+    contact={
+        "name": "Équipe Dev",
+    },
+    license_info={
+        "name": "Privé",
+    },
+)
+
+# ── Création des tables au démarrage ─────────────────────────────────────────
+Base.metadata.create_all(bind=engine)
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# En développement on autorise tout.
+# En production : remplacer allow_origins par l'URL du front.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ── Routers ───────────────────────────────────────────────────────────────────
+app.include_router(auth.router)
+app.include_router(admin_classes_matieres.router)
+app.include_router(admin_utilisateurs.router)
+app.include_router(admin_stats.router)
+
+
+# ── Endpoints utilitaires ─────────────────────────────────────────────────────
+
+@app.get("/", tags=["Root"], summary="Health check")
+def root():
+    """Vérifie que l'API est bien démarrée."""
+    return {
+        "status": "ok",
+        "message": "API Gestion Scolaire — voir /docs pour la documentation interactive",
+    }
+
+
+@app.get("/test-aws", tags=["Debug"], summary="Test connexion AWS RDS")
 def test_connection(db: Session = Depends(get_db)):
+    """
+    Vérifie la connexion à la base de données AWS RDS.
+
+    - Exécute `SELECT @@VERSION`
+    - Retourne la version du serveur SQL si la connexion réussit
+    - Retourne un message d'erreur en cas d'échec
+    """
     try:
         result = db.execute(text("SELECT @@VERSION")).fetchone()
         if result is None:
             return {
                 "status": "Error",
-                "message": "Aucun résultat retourné"
+                "message": "Aucun résultat retourné",
             }
         return {
             "status": "Success",
             "message": "Connexion à AWS RDS réussie !",
-            "sql_server_version": result[0]
+            "sql_server_version": result[0],
         }
     except Exception as e:
         return {
             "status": "Error",
-            "message": str(e)
-        }             
+            "message": str(e),
+        }

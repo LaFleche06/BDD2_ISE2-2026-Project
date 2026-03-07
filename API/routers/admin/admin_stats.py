@@ -26,6 +26,13 @@ Accès
 -----
 
 Toutes les routes nécessitent le rôle **admin**.
+
+Note technique — CAST(... AS REAL)
+-----------------------------------
+SQLite stocke les colonnes Numeric/Decimal comme des entiers si la valeur
+ne contient pas de partie décimale explicite (ex: Decimal("2.00") → 2).
+Sans CAST, la division entière tronque le résultat (14.666 → 14).
+Le CAST force une division flottante, compatible avec SQL Server et SQLite.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -50,8 +57,16 @@ router = APIRouter(
     tags=["Admin — Statistiques et Classements"]
 )
 
-# dépendance de sécurité (admin uniquement)
 admin_only = Depends(require_role("admin"))
+
+# ─────────────────────────────────────────────
+# Fragment SQL réutilisé dans les 3 requêtes.
+# CAST AS REAL garantit la division flottante sur SQLite ET SQL Server.
+# ─────────────────────────────────────────────
+_MOYENNE_SQL = """
+    CAST(SUM(n.valeur * m.coefficient) AS REAL) /
+    NULLIF(CAST(SUM(m.coefficient) AS REAL), 0)
+"""
 
 
 # ─────────────────────────────────────────────
@@ -61,49 +76,26 @@ admin_only = Depends(require_role("admin"))
 @router.get(
     "/stats",
     summary="Statistiques globales",
-    description="Retourne les principaux indicateurs du système : "
-                "nombre d'étudiants, professeurs, classes, matières, notes "
-                "ainsi que la moyenne générale et le taux de réussite."
+    description=(
+        "Retourne les principaux indicateurs du système : "
+        "nombre d'étudiants, professeurs, classes, matières, notes, "
+        "ainsi que la moyenne générale et le taux de réussite."
+    ),
 )
 def stats_globales(
     db: Session = Depends(get_db),
-    _: object = admin_only
+    _: object = admin_only,
 ):
-    """
-    Calcule les statistiques globales de l'établissement.
+    nb_etudiants   = db.query(func.count(Etudiant.matricule)).scalar() or 0
+    nb_professeurs = db.query(func.count(Professeur.id)).scalar()      or 0
+    nb_classes     = db.query(func.count(Classe.id)).scalar()          or 0
+    nb_matieres    = db.query(func.count(Matiere.id)).scalar()         or 0
+    nb_notes       = db.query(func.count(Note.id)).scalar()            or 0
 
-    Paramètres
-    ----------
-    db : Session
-        Session SQLAlchemy injectée par FastAPI.
-
-    Retour
-    ------
-    dict
-        Contient :
-        - nb_etudiants
-        - nb_professeurs
-        - nb_classes
-        - nb_matieres
-        - nb_notes
-        - moyenne_etablissement
-        - taux_reussite_pct
-    """
-
-    nb_etudiants = db.query(func.count(Etudiant.matricule)).scalar() or 0
-    nb_professeurs = db.query(func.count(Professeur.id)).scalar() or 0
-    nb_classes = db.query(func.count(Classe.id)).scalar() or 0
-    nb_matieres = db.query(func.count(Matiere.id)).scalar() or 0
-    nb_notes = db.query(func.count(Note.id)).scalar() or 0
-
+    # Moyenne globale de l'établissement (pondérée)
     result = db.execute(
-        text("""
-            SELECT
-                ROUND(
-                    SUM(n.valeur * m.coefficient) /
-                    NULLIF(SUM(m.coefficient), 0),
-                    2
-                )
+        text(f"""
+            SELECT ROUND({_MOYENNE_SQL}, 2)
             FROM note n
             JOIN matiere m ON m.id = n.matiere_id
         """)
@@ -113,16 +105,16 @@ def stats_globales(
     if result and result[0] is not None:
         moyenne_etablissement = float(result[0])
 
+    # Taux de réussite (étudiants avec moyenne >= 10)
     result_reussite = db.execute(
-        text("""
+        text(f"""
             SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN moy >= 10 THEN 1 ELSE 0 END) AS admis
+                COUNT(*)                                          AS total,
+                SUM(CASE WHEN moy >= 10 THEN 1 ELSE 0 END)       AS admis
             FROM (
                 SELECT
                     e.matricule,
-                    SUM(n.valeur * m.coefficient) /
-                    NULLIF(SUM(m.coefficient), 0) AS moy
+                    {_MOYENNE_SQL} AS moy
                 FROM etudiant e
                 JOIN note n ON n.etudiant_id = e.matricule
                 JOIN matiere m ON m.id = n.matiere_id
@@ -132,20 +124,19 @@ def stats_globales(
     ).fetchone()
 
     taux_reussite = None
-
     if result_reussite and result_reussite[0]:
         total = result_reussite[0]
         admis = result_reussite[1] or 0
         taux_reussite = round((admis / total) * 100, 1)
 
     return {
-        "nb_etudiants": nb_etudiants,
-        "nb_professeurs": nb_professeurs,
-        "nb_classes": nb_classes,
-        "nb_matieres": nb_matieres,
-        "nb_notes": nb_notes,
+        "nb_etudiants":          nb_etudiants,
+        "nb_professeurs":        nb_professeurs,
+        "nb_classes":            nb_classes,
+        "nb_matieres":           nb_matieres,
+        "nb_notes":              nb_notes,
         "moyenne_etablissement": moyenne_etablissement,
-        "taux_reussite_pct": taux_reussite,
+        "taux_reussite_pct":     taux_reussite,
     }
 
 
@@ -155,49 +146,26 @@ def stats_globales(
 
 @router.get(
     "/classement/{classe_id}",
-    summary="Classement d'une classe"
+    summary="Classement d'une classe",
 )
 def classement_classe(
     classe_id: int,
     db: Session = Depends(get_db),
-    _: object = admin_only
+    _: object = admin_only,
 ):
-    """
-    Génère le classement des étudiants d'une classe.
-
-    La moyenne est calculée de manière **pondérée par coefficient de matière**.
-
-    Paramètres
-    ----------
-    classe_id : int
-        Identifiant de la classe.
-
-    Retour
-    ------
-    dict
-        Informations de la classe et liste des étudiants classés.
-    """
-
     classe = db.query(Classe).filter(Classe.id == classe_id).first()
-
     if not classe:
         raise HTTPException(status_code=404, detail="Classe introuvable")
 
     result = db.execute(
-        text("""
+        text(f"""
             SELECT
                 e.matricule,
                 e.nom,
                 e.prenom,
-                ROUND(
-                    SUM(n.valeur * m.coefficient) /
-                    NULLIF(SUM(m.coefficient), 0),
-                    2
-                ) AS moyenne,
+                ROUND({_MOYENNE_SQL}, 2) AS moyenne,
                 RANK() OVER (
-                    ORDER BY
-                    SUM(n.valeur * m.coefficient) /
-                    NULLIF(SUM(m.coefficient), 0) DESC
+                    ORDER BY ({_MOYENNE_SQL}) DESC
                 ) AS rang
             FROM etudiant e
             JOIN note n ON n.etudiant_id = e.matricule
@@ -206,71 +174,53 @@ def classement_classe(
             GROUP BY e.matricule, e.nom, e.prenom
             ORDER BY rang
         """),
-        {"classe_id": classe_id}
+        {"classe_id": classe_id},
     ).fetchall()
 
     classement = []
-
     for row in result:
-
         moyenne = float(row[3]) if row[3] is not None else None
-
         classement.append({
-            "rang": row[4],
+            "rang":      row[4],
             "matricule": row[0],
-            "nom": row[1],
-            "prenom": row[2],
-            "moyenne": moyenne,
-            "decision": "Admis" if moyenne is not None and moyenne >= 10 else "Ajourné"
+            "nom":       row[1],
+            "prenom":    row[2],
+            "moyenne":   moyenne,
+            "decision":  "Admis" if moyenne is not None and moyenne >= 10 else "Ajourné",
         })
 
     return {
-        "classe": classe.libelle,
+        "classe":        classe.libelle,
         "annee_scolaire": classe.annee_scolaire,
-        "classement": classement,
+        "classement":    classement,
     }
 
 
 # ─────────────────────────────────────────────
-# SAUVEGARDE DES RESULTATS
+# SAUVEGARDE DES RÉSULTATS OFFICIELS
 # ─────────────────────────────────────────────
 
 @router.post(
     "/classement/{classe_id}/sauvegarder",
     status_code=status.HTTP_201_CREATED,
-    summary="Sauvegarder les résultats officiels"
+    summary="Sauvegarder les résultats officiels",
 )
 def sauvegarder_classement(
     classe_id: int,
     db: Session = Depends(get_db),
-    _: object = admin_only
+    _: object = admin_only,
 ):
-    """
-    Calcule les moyennes générales et enregistre les résultats
-    officiels dans la table `resultat`.
-
-    Les résultats existants pour la même classe et année scolaire
-    sont supprimés avant insertion.
-    """
-
     classe = db.query(Classe).filter(Classe.id == classe_id).first()
-
     if not classe:
         raise HTTPException(status_code=404, detail="Classe introuvable")
 
     result = db.execute(
-        text("""
+        text(f"""
             SELECT
                 e.matricule,
-                ROUND(
-                    SUM(n.valeur * m.coefficient) /
-                    NULLIF(SUM(m.coefficient), 0),
-                    2
-                ) AS moyenne,
+                ROUND({_MOYENNE_SQL}, 2) AS moyenne,
                 RANK() OVER (
-                    ORDER BY
-                    SUM(n.valeur * m.coefficient) /
-                    NULLIF(SUM(m.coefficient), 0) DESC
+                    ORDER BY ({_MOYENNE_SQL}) DESC
                 ) AS rang
             FROM etudiant e
             JOIN note n ON n.etudiant_id = e.matricule
@@ -278,82 +228,56 @@ def sauvegarder_classement(
             WHERE e.classe_id = :classe_id
             GROUP BY e.matricule
         """),
-        {"classe_id": classe_id}
+        {"classe_id": classe_id},
     ).fetchall()
 
     if not result:
         raise HTTPException(
             status_code=400,
-            detail="Aucune note trouvée pour cette classe"
+            detail="Aucune note trouvée pour cette classe",
         )
 
+    # Supprime les anciens résultats (même classe + même année) avant réinsertion
     db.query(Resultat).filter(
         Resultat.classe_id == classe_id,
         Resultat.annee_scolaire == classe.annee_scolaire,
     ).delete(synchronize_session=False)
 
     for row in result:
-
         matricule, moyenne, rang = row
         moyenne = float(moyenne) if moyenne is not None else None
-
-        decision = "Admis" if moyenne is not None and moyenne >= 10 else "Ajourné"
-
         db.add(Resultat(
             classe_id=classe_id,
             etudiant_id=matricule,
             moyenne_generale=moyenne,
-            decision=decision,
+            decision="Admis" if moyenne is not None and moyenne >= 10 else "Ajourné",
             annee_scolaire=classe.annee_scolaire,
             rang=rang,
         ))
 
     db.commit()
-
-    return {
-        "message": f"Résultats sauvegardés pour {len(result)} étudiant(s)"
-    }
+    return {"message": f"Résultats sauvegardés pour {len(result)} étudiant(s)"}
 
 
 # ─────────────────────────────────────────────
-# CONSULTATION DES NOTES
+# CONSULTATION GLOBALE DES NOTES
 # ─────────────────────────────────────────────
 
 @router.get(
     "/notes",
     response_model=list[NoteResponse],
-    summary="Liste des notes"
+    summary="Liste des notes",
 )
 def all_notes(
-    classe_id: int | None = Query(
-        None,
-        description="Filtrer les notes par classe"
-    ),
+    classe_id: int | None = Query(None, description="Filtrer les notes par classe"),
     db: Session = Depends(get_db),
-    _: object = admin_only
+    _: object = admin_only,
 ):
-    """
-    Retourne toutes les notes du système.
-
-    Paramètres
-    ----------
-    classe_id : int | None
-        Permet de filtrer les notes par classe.
-
-    Retour
-    ------
-    list[NoteResponse]
-        Liste des notes correspondantes.
-    """
-
     query = db.query(Note)
 
     if classe_id is not None:
         query = query.join(
-            Etudiant,
-            Note.etudiant_id == Etudiant.matricule
-        ).filter(
-            Etudiant.classe_id == classe_id
-        )
+            Etudiant, Note.etudiant_id == Etudiant.matricule
+        ).filter(Etudiant.classe_id == classe_id)
 
     return query.all()

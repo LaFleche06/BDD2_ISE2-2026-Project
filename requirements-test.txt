@@ -1,0 +1,6 @@
+# Dépendances de test uniquement
+# Installation : pip install -r requirements-test.txt
+
+pytest==8.2.0
+httpx==0.27.0        # nécessaire pour TestClient de FastAPI
+pytest-cov==5.0.0   # rapport de couverture (optionnel en local, utilisé en CI)
