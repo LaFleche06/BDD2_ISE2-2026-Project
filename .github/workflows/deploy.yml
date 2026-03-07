@@ -1,0 +1,21 @@
+name: Deploy API_web-app 
+# CI/CD workflow pour AWS ECS :
+# À chaque push sur la branche main :
+#  - Une nouvelle image Docker est construite
+#  - La tâche ECS est mise à jour
+#  - Le serveur EC2 déploie la nouvelle image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs: 
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
