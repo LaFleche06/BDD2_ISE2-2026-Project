@@ -1,16 +1,11 @@
 """
-Point d'entrée de l'API
+Point d'entrée de l'API — Gestion Scolaire
 
 Routers :
-    /auth           => authentification
-    /admin          => espace administrateur
-        admin_classes_matieres  => CRUD classes & matières
-        utilisateurs      => CRUD étudiants, professeurs, interventions
-        stats             => statistiques, classements, sauvegarde résultats
-
-À venir :
-    /prof           => espace professeur
-    /etudiant       => espace étudiant
+    /auth           → authentification (login)
+    /admin          → espace administrateur
+    /prof           → espace professeur
+    /etudiant       → espace étudiant
 """
 
 from fastapi import FastAPI, Depends
@@ -25,8 +20,9 @@ from routers import auth
 from routers.admin import admin_classes_matieres
 from routers.admin import admin_utilisateurs
 from routers.admin import admin_stats
+from routers import professeur
+from routers import etudiant
 
-# ── Application ───────────────────────────────────────────────────────────────
 app = FastAPI(
     title="API Gestion Scolaire",
     description="""
@@ -34,12 +30,12 @@ app = FastAPI(
 
 ### Espaces disponibles
 
-| Espace        | Rôle requis | Description                                      |
-|---------------|-------------|--------------------------------------------------|
-| `/auth`       | —           | Authentification JWT                             |
-| `/admin`      | `admin`     | Gestion complète : classes, profs, étudiants...  |
-| `/prof`       | `prof`      | Saisie et consultation des notes *(à venir)*     |
-| `/etudiant`   | `etudiant`  | Dashboard et consultation des notes *(à venir)*  |
+| Espace       | Rôle requis | Description                                     |
+|--------------|-------------|-------------------------------------------------|
+| `/auth`      | —           | Authentification JWT                            |
+| `/admin`     | `admin`     | Gestion complète : classes, profs, étudiants... |
+| `/prof`      | `prof`      | Saisie et consultation des notes                |
+| `/etudiant`  | `etudiant`  | Dashboard et consultation des notes             |
 
 ### Authentification
 Toutes les routes protégées nécessitent un token JWT dans le header :
@@ -48,24 +44,16 @@ Authorization: Bearer <token>
 ```
 Obtenez un token via **POST /auth/login**.
     """,
-    version="0.2.0",
-    contact={
-        "name": "Équipe Dev",
-    },
-    license_info={
-        "name": "Privé",
-    },
+    version="1.0.0",
 )
 
-# ── Création des tables au démarrage ─────────────────────────────────────────
+# ── Tables ────────────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# En développement on autorise tout.
-# En production : remplacer allow_origins par l'URL du front.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],   # restreindre en production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,6 +64,8 @@ app.include_router(auth.router)
 app.include_router(admin_classes_matieres.router)
 app.include_router(admin_utilisateurs.router)
 app.include_router(admin_stats.router)
+app.include_router(professeur.router)
+app.include_router(etudiant.router)
 
 
 # ── Endpoints utilitaires ─────────────────────────────────────────────────────
