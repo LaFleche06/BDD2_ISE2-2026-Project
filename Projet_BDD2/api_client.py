@@ -14,24 +14,24 @@ def _headers(token: str) -> dict:
 
 def _get(path: str, token: str, params: dict = None):
     """GET vers l'API, retourne le JSON ou None en cas d'erreur."""
-    r = requests.get(f"{API_BASE_URL}{path}", headers=_headers(token), params=params, verify=False, timeout=15)
+    r = requests.get(f"{API_BASE_URL}{path}", headers=_headers(token), params=params, timeout=15)
     if r.status_code == 200:
         return r.json()
     return None
 
 
 def _post(path: str, token: str, payload: dict):
-    r = requests.post(f"{API_BASE_URL}{path}", headers=_headers(token), json=payload, verify=False, timeout=15)
+    r = requests.post(f"{API_BASE_URL}{path}", headers=_headers(token), json=payload,   timeout=15)
     return r
 
 
 def _put(path: str, token: str, payload: dict = None):
-    r = requests.put(f"{API_BASE_URL}{path}", headers=_headers(token), json=payload or {}, verify=False, timeout=15)
+    r = requests.put(f"{API_BASE_URL}{path}", headers=_headers(token), json=payload or {},   timeout=15)
     return r
 
 
 def _delete(path: str, token: str, payload: dict = None):
-    r = requests.delete(f"{API_BASE_URL}{path}", headers=_headers(token), json=payload, verify=False, timeout=15)
+    r = requests.delete(f"{API_BASE_URL}{path}", headers=_headers(token), json=payload,   timeout=15)
     return r
 
 
@@ -44,7 +44,7 @@ def login(email: str, mot_de_passe: str):
     r = requests.post(
         f"{API_BASE_URL}/auth/login",
         json={"email": email, "mot_de_passe": mot_de_passe},
-        verify=False, timeout=15
+          timeout=15
     )
     if r.status_code == 200:
         data = r.json()
@@ -55,7 +55,7 @@ def login(email: str, mot_de_passe: str):
 def health_check():
     """Vérifie que l'API répond."""
     try:
-        r = requests.get(f"{API_BASE_URL}/", verify=False, timeout=10)
+        r = requests.get(f"{API_BASE_URL}/",   timeout=10)
         return r.status_code == 200, r.json()
     except Exception as e:
         return False, str(e)
