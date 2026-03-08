@@ -122,7 +122,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f8ef7;
 <nav class="topbar">
   <a class="brand" href="/EDE/dashboard">EDE<span>.</span></a>
   <div class="spacer"></div>
-  {% if session.user_id %}
+  {% if session.token %}
     {% if session.role=='etudiant' %}<span class="role-badge rb-etudiant">🎓 ETUDIANT</span>
     {% elif session.role=='professeur' %}<span class="role-badge rb-professeur">📚 PROF</span>
     {% else %}<span class="role-badge rb-admin">⚙️ ADMIN</span>{% endif %}
@@ -131,7 +131,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f8ef7;
   {% endif %}
 </nav>
 
-{% if session.user_id %}
+{% if session.token %}
 <aside class="sidebar">
   {% if session.role=='etudiant' %}
     <div class="nav-label">Mon espace</div>
@@ -162,7 +162,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f8ef7;
 </aside>
 {% endif %}
 
-<main class="main {% if not session.user_id %}no-sidebar{% endif %}">
+<main class="main {% if not session.token %}no-sidebar{% endif %}">
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% for cat,msg in messages %}
   <div class="alert alert-{{cat}}">{{ msg }}</div>

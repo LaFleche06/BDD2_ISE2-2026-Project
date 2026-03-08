@@ -66,7 +66,14 @@
       {% for n in notes %}
       <tr>
         <td style="color:#9ca3af;font-size:11px">{{ n.id }}</td>
-        <td>mat.{{ n.etudiant_id }}</td>
+        <td>
+          <strong>mat.{{ n.etudiant_id }}</strong>
+          {% for e in etudiants %}
+            {% if e.matricule == n.etudiant_id %}
+              <div style="font-size:12px;color:#4b5563">{{ e.prenom }} {{ e.nom }}</div>
+            {% endif %}
+          {% endfor %}
+        </td>
         <td>{{ n.matiere.nom if n.matiere else n.matiere_id }}</td>
         <td><span class="{{ note_color(n.valeur) }}">{{ n.valeur }}/20</span></td>
         <td style="font-size:11px;color:#9ca3af">{{ (n.date_saisie or '')[:10] }}</td>

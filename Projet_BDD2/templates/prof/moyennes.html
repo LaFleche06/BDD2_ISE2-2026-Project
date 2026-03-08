@@ -31,7 +31,7 @@
         {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
         {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
       </td>
-      <td><strong>{{ r.nom if r.nom else '—' }}</strong></td>
+      <td><strong>{{ r.etudiant.prenom }} {{ r.etudiant.nom }}</strong></td>
       <td><span class="{{ note_color(r.moyenne_generale) }}">{{ r.moyenne_generale }}/20</span></td>
       <td>
         {% set dec = r.decision or '' %}
