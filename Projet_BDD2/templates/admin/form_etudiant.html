@@ -1,145 +1,53 @@
 {% extends 'base.html' %}
-
-{% block title %}
-{% if etudiant %}Modifier{% else %}Ajouter{% endif %} un Etudiant
-{% endblock %}
-
+{% block title %}{{ 'Modifier' if etudiant else 'Ajouter' }} un étudiant{% endblock %}
 {% block content %}
-
 <div class="ph">
-  <h1>
-    {% if etudiant %}
-      ✏️ Modifier {{ etudiant.prenom }} {{ etudiant.nom }}
-    {% else %}
-      ➕ Ajouter un etudiant
-    {% endif %}
-  </h1>
+  <div>
+    <h1>{{ '✏️ Modifier' if etudiant else '+ Ajouter' }} un étudiant</h1>
+    <div class="ph-sub">{{ 'Matricule ' + etudiant.matricule|string if etudiant else 'Nouveau compte étudiant' }}</div>
+  </div>
+  <a href="/EDE/admin/etudiants" class="btn btn-sec">← Retour</a>
 </div>
-
-<div class="card" style="max-width:580px">
-
-  <form method="POST">
-
-    <!-- =====================
-         NOM / PRENOM
-    ====================== -->
-
+<div class="card" style="max-width:600px">
+  <form method="post">
     <div class="form-row">
-
       <div class="form-group">
-        <label>Prenom</label>
-        <input type="text"
-               name="prenom"
-               value="{{ etudiant.prenom if etudiant else '' }}"
-               required
-               onkeyup="updateEmail()">
+        <label>Prénom</label>
+        <input name="prenom" required value="{{ etudiant.prenom if etudiant else '' }}">
       </div>
-
       <div class="form-group">
         <label>Nom</label>
-        <input type="text"
-               name="nom"
-               value="{{ etudiant.nom if etudiant else '' }}"
-               required
-               onkeyup="updateEmail()">
+        <input name="nom" required value="{{ etudiant.nom if etudiant else '' }}">
       </div>
-
     </div>
-
-
-    <!-- =====================
-         TELEPHONE + CLASSE
-    ====================== -->
-
-    <div class="form-row">
-
-      <div class="form-group">
-        <label>Telephone</label>
-        <input type="text"
-               name="telephone"
-               value="{{ etudiant.telephone_etudiant if etudiant else '' }}"
-               placeholder="+221770000000">
-      </div>
-
-      <div class="form-group">
-        <label>Classe</label>
-
-        <select name="classe_id" required> <option value="">-- Choisir --</option>
-            {% for c in classes %}
-                <option value="{{ c.id_classe }}">
-                    {{ c.libelle_classe }}
-                </option>
-            {% endfor %}
-        </select>
-
-      </div>
-
+    <div class="form-group">
+      <label>Téléphone</label>
+      <input name="telephone" value="{{ etudiant.telephone if etudiant else '' }}">
     </div>
-
-
-    <!-- =====================
-         EMAIL + PASSWORD
-    ====================== -->
-
+    <div class="form-group">
+      <label>Classe</label>
+      <select name="classe_id" required>
+        <option value="">— Choisir une classe —</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {{ 'selected' if etudiant and etudiant.classe_id == c.id }}>
+          {{ c.libelle }} {% if c.annee_scolaire %}({{ c.annee_scolaire }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
     {% if not etudiant %}
-
     <div class="form-group">
       <label>Email</label>
-      <input type="text" id="email_preview" disabled>
+      <input name="email" type="email" required placeholder="prenom.nom@ede.sn">
     </div>
-
     <div class="form-group">
       <label>Mot de passe</label>
-      <input type="password"
-             name="password"
-             required
-             placeholder="ex: prenom123">
+      <input name="password" type="password" required>
     </div>
-
     {% endif %}
-
-
-    <!-- =====================
-         BOUTONS
-    ====================== -->
-
-    <div style="display:flex;gap:10px;margin-top:10px">
-
-      <button type="submit" class="btn btn-primary">
-        💾 Enregistrer
-      </button>
-
-      <a href="/EDE/admin/etudiants" class="btn btn-sec">
-        Annuler
-      </a>
-
-    </div>
-
+    <button class="btn btn-primary" type="submit">
+      {{ '✏️ Enregistrer' if etudiant else '+ Créer' }}
+    </button>
   </form>
-
 </div>
-
-
-<!-- =====================
-     SCRIPT EMAIL AUTO
-===================== -->
-
-<script>
-
-function updateEmail(){
-
-    let prenom = document.querySelector("[name='prenom']").value.toLowerCase().trim()
-    let nom = document.querySelector("[name='nom']").value.toLowerCase().trim()
-
-    if(prenom && nom){
-
-        document.getElementById("email_preview").value =
-            prenom + "." + nom + "@ede.sn"
-
-    }
-
-}
-
-</script>
-
 {% endblock %}

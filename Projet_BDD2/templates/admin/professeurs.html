@@ -1,31 +1,52 @@
 {% extends 'base.html' %}
-{% block title %}Gestion Professeurs{% endblock %}
+{% block title %}Professeurs{% endblock %}
 {% block content %}
 <div class="ph">
   <div><h1>📚 Professeurs</h1><div class="ph-sub">{{ professeurs|length }} professeur(s)</div></div>
-  <a href="/EDE/admin/professeurs/ajouter" class="btn btn-primary">+ Ajouter</a>
+  <a href="/EDE/admin/professeurs/ajouter" class="btn btn-primary">+ Ajouter un professeur</a>
 </div>
-<div class="card">
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>Nom complet</th><th>Telephone</th><th>Actions</th></tr></thead>
-      <tbody>
-      {% for p in professeurs %}
-      <tr>
-        <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:11px">{{ p.id_prof }}</code></td>
-        <td><strong>{{ p.prenom_prof }} {{ p.nom_prof }}</strong></td>
-        <td style="font-size:12px">{{ p.telephone_prof or '—' }}</td>
-        <td>
-          <a href="/EDE/admin/professeurs/modifier/{{ p.id_prof }}" class="btn btn-sec btn-xs">✏️ Modifier</a>
-          <form method="POST" action="/EDE/admin/professeurs/supprimer/{{ p.id_prof }}"
-                style="display:inline" onsubmit="return confirm('Supprimer ce professeur ?')">
-            <button type="submit" class="btn btn-red btn-xs">🗑️</button>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Nom complet</th><th>Email</th><th>Téléphone</th><th>Statut</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for p in professeurs %}
+    {% set interv_prof = interventions | selectattr('professeur_id','eq', p.id) | list %}
+    <tr>
+      <td><strong>{{ p.prenom }} {{ p.nom }}</strong></td>
+      <td style="font-size:12px;color:#6b7280">{{ p.utilisateur.email if p.utilisateur else '—' }}</td>
+      <td style="font-size:12px">{{ p.telephone or '—' }}</td>
+      <td>
+        {% if p.utilisateur and p.utilisateur.actif %}
+          <span class="badge b-green">Actif</span>
+        {% else %}
+          <span class="badge b-red">Inactif</span>
+        {% endif %}
+      </td>
+      <td style="white-space:nowrap">
+        <a href="/EDE/admin/professeurs/modifier/{{ p.id }}" class="btn btn-sec btn-xs">✏️ Gérer</a>
+        <form action="/EDE/admin/professeurs/supprimer/{{ p.id }}" method="post" style="display:inline"
+              onsubmit="return confirm('Supprimer {{ p.prenom }} {{ p.nom }} ?')">
+          <button class="btn btn-red btn-xs">🗑️</button>
+        </form>
+        {% if p.utilisateur %}
+          {% if p.utilisateur.actif %}
+          <form action="/EDE/admin/utilisateurs/{{ p.utilisateur.id }}/desactiver" method="post" style="display:inline">
+            <button class="btn btn-sec btn-xs" title="Désactiver">🔒</button>
           </form>
-        </td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+          {% else %}
+          <form action="/EDE/admin/utilisateurs/{{ p.utilisateur.id }}/activer" method="post" style="display:inline">
+            <button class="btn btn-green btn-xs" title="Activer">🔓</button>
+          </form>
+          {% endif %}
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:30px">Aucun professeur enregistré.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}

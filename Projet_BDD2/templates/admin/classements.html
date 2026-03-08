@@ -1,74 +1,98 @@
 {% extends 'base.html' %}
 {% block title %}Classements{% endblock %}
 {% block content %}
-<div class="ph"><h1>🏆 Classements & Resultats</h1></div>
+<div class="ph">
+  <div><h1>🏆 Classements & Résultats</h1><div class="ph-sub">Classement en direct + résultats officiels</div></div>
+</div>
 
-<!-- Filtre classe -->
-<div class="card" style="padding:14px 20px;margin-bottom:14px">
-  <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <label style="margin:0">Classe :</label>
-    <select name="classe_id" onchange="this.form.submit()" style="width:200px">
-      {% for c in classes %}
-      <option value="{{ c.id_classe }}" {% if c.id_classe==classe_id %}selected{% endif %}>
-        {{ c.libelle_classe }} ({{ c.annee_scolaire }})
-      </option>
-      {% endfor %}
-    </select>
+<!-- Sélecteur de classe -->
+<div class="card" style="padding:14px 20px;margin-bottom:18px">
+  <form method="get" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:180px">
+      <label style="margin-bottom:4px">Classe</label>
+      <select name="classe_id" onchange="this.form.submit()">
+        {% for c in classes %}
+        <option value="{{ c.id }}" {{ 'selected' if classe_id == c.id }}>{{ c.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
   </form>
 </div>
 
-{% if stats %}
-<div class="stats-grid">
-  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants }}</div><div class="stat-lbl">Etudiants</div></div>
-  <div class="stat-card g"><div class="stat-val">{{ stats.moyenne_classe or '—' }}</div><div class="stat-lbl">Moyenne classe</div></div>
-  <div class="stat-card g"><div class="stat-val">{{ stats.nb_admis }}</div><div class="stat-lbl">Admis</div></div>
-  <div class="stat-card r"><div class="stat-val">{{ stats.nb_ajournes }}</div><div class="stat-lbl">Ajournes</div></div>
-  <div class="stat-card o"><div class="stat-val">{{ stats.taux_reussite }}%</div><div class="stat-lbl">Taux reussite</div></div>
-  <div class="stat-card"><div class="stat-val">{{ stats.note_max or '—' }}</div><div class="stat-lbl">Meilleure moyenne</div></div>
+{% if classes %}
+<!-- Statistiques de la classe -->
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
+  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants or 0 }}</div><div class="stat-lbl">Étudiants</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.moyenne_classe or '—' }}</div><div class="stat-lbl">Moy. classe</div></div>
+  <div class="stat-card r"><div class="stat-val">{{ stats.note_min or '—' }}</div><div class="stat-lbl">Note min</div></div>
+  <div class="stat-card"><div class="stat-val">{{ stats.note_max or '—' }}</div><div class="stat-lbl">Note max</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.nb_admis or 0 }}</div><div class="stat-lbl">Admis</div></div>
+  <div class="stat-card r"><div class="stat-val">{{ stats.nb_ajournes or 0 }}</div><div class="stat-lbl">Ajournés</div></div>
 </div>
-{% endif %}
 
+<!-- Classement en direct -->
 <div class="card">
   <div class="card-header">
-    <span class="card-title">📊 Classement</span>
-    {% if classe_id %}
-    <form method="POST" action="/EDE/admin/classements/calculer/{{ classe_id }}" style="display:flex;gap:8px;align-items:center">
-      <input type="text" name="annee_scolaire" placeholder="2024-2025" value="2024-2025" style="width:120px;padding:6px 10px;font-size:12px">
-      <button type="submit" class="btn btn-green btn-sm">💾 Sauvegarder resultats</button>
+    <span class="card-title">📊 Classement en direct</span>
+    <form action="/EDE/admin/classements/sauvegarder/{{ classe_id }}" method="post" style="display:inline">
+      <button class="btn btn-green btn-sm" type="submit"
+              onclick="return confirm('Sauvegarder les résultats officiels pour cette classe ?')">
+        💾 Sauvegarder les résultats
+      </button>
     </form>
-    {% endif %}
   </div>
-  {% if classement %}
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Rang</th><th>Etudiant</th><th>Matricule</th><th>Nb Matieres</th><th>Moyenne /20</th><th>Decision</th></tr></thead>
+      <thead><tr><th>Rang</th><th>Étudiant</th><th>Moyenne</th><th>Décision</th></tr></thead>
       <tbody>
-      {% for e in classement %}
+      {% for r in classement %}
       <tr>
         <td>
-          {% if e.rang==1 %}<span class="rang-1">🥇 1er</span>
-          {% elif e.rang==2 %}<span class="rang-2">🥈 2e</span>
-          {% elif e.rang==3 %}<span class="rang-3">🥉 3e</span>
-          {% else %}<span class="rang-n">{{ e.rang }}e</span>{% endif %}
+          {% if r.rang == 1 %}<span class="rang-1">🥇 1er</span>
+          {% elif r.rang == 2 %}<span class="rang-2">🥈 2ème</span>
+          {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
+          {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
         </td>
-        <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
-        <td><code style="font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:4px">{{ e.matricule }}</code></td>
-        <td>{{ e.nb_matieres }}</td>
-        <td class="{{ note_color(e.moyenne_generale) }}" style="font-size:16px;font-weight:800">
-          {{ e.moyenne_generale or '—' }}
-        </td>
+        <td><strong>{{ r.nom if r.nom else (r.prenom + ' ' + r.nom_etudiant if r.nom_etudiant else '—') }}</strong></td>
+        <td><span class="{{ note_color(r.moyenne_generale) }}">{{ r.moyenne_generale }}/20</span></td>
         <td>
-          <span class="badge {% if e.decision=='Admis' %}b-green{% else %}b-red{% endif %}">
-            {% if e.decision=='Admis' %}✅{% else %}❌{% endif %} {{ e.decision }}
+          {% set dec = r.decision or '' %}
+          <span class="badge {% if 'Admis' in dec %}b-green{% else %}b-red{% endif %}">{{ dec or '—' }}</span>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px">Aucune donnée de classement.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Résultats officiels sauvegardés -->
+{% if resultats %}
+<div class="card">
+  <div class="card-header"><span class="card-title">📋 Résultats officiels sauvegardés</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Rang</th><th>Étudiant</th><th>Moyenne</th><th>Décision</th><th>Année</th></tr></thead>
+      <tbody>
+      {% for res in resultats %}
+      <tr>
+        <td><span class="rang-n">{{ res.rang }}ème</span></td>
+        <td><strong>{{ res.etudiant.prenom }} {{ res.etudiant.nom }}</strong></td>
+        <td><span class="{{ note_color(res.moyenne_generale) }}">{{ res.moyenne_generale }}/20</span></td>
+        <td>
+          <span class="badge {% if res.decision and 'Admis' in res.decision %}b-green{% else %}b-red{% endif %}">
+            {{ res.decision or '—' }}
           </span>
         </td>
+        <td style="color:#9ca3af;font-size:12px">{{ res.annee_scolaire or '—' }}</td>
       </tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
-  {% else %}
-  <p style="text-align:center;color:#9ca3af;padding:40px">Selectionnez une classe pour voir le classement.</p>
-  {% endif %}
 </div>
+{% endif %}
+{% endif %}
 {% endblock %}

@@ -1,143 +1,72 @@
 {% extends 'base.html' %}
-{% block title %}Gestion Notes (Admin){% endblock %}
+{% block title %}Notes — Admin{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>📝 Toutes les Notes</h1><div class="ph-sub">{{ notes|length }} note(s)</div></div>
-  <button class="btn btn-primary" onclick="document.getElementById('modal-add').classList.add('open')">+ Ajouter</button>
+  <div><h1>📝 Notes</h1><div class="ph-sub">Consultation et gestion des notes</div></div>
 </div>
 
-<!-- Filtre -->
-<div class="card" style="padding:14px 20px;margin-bottom:14px">
-  <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <label style="margin:0">Filtrer par classe :</label>
-    <select name="classe_id" onchange="this.form.submit()" style="width:200px">
-      <option value="">-- Toutes les classes --</option>
-      {% for c in classes %}
-      <option value="{{ c.id_classe }}" {% if c.id_classe==classe_id %}selected{% endif %}>{{ c.libelle_classe }}</option>
-      {% endfor %}
-    </select>
+<!-- Filtre classe -->
+<div class="card" style="padding:16px 20px;margin-bottom:18px">
+  <form method="get" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:180px">
+      <label style="margin-bottom:4px">Filtrer par classe</label>
+      <select name="classe_id" onchange="this.form.submit()">
+        <option value="">— Toutes les classes —</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {{ 'selected' if classe_id == c.id }}>{{ c.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
   </form>
 </div>
 
-<div class="card">
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Etudiant</th><th>Classe</th><th>Matiere</th><th>Note /20</th><th>Professeur</th><th>Date</th><th>Actions</th></tr></thead>
-      <tbody>
-      {% for n in notes %}
-      <tr>
-        <td>{{ n.prenom_etudiant }} {{ n.nom_etudiant }}<br>
-            <span style="font-size:10px;color:#9ca3af">mat. {{ n.matricule }}</span></td>
-        <td><span class="badge b-purple">{{ n.libelle_classe }}</span></td>
-        <td>{{ n.nom_matiere }}<br>
-            <span class="badge b-blue" style="font-size:10px">coeff {{ n.coefficient_matiere }}</span></td>
-        <td class="{{ note_color(n.valeur_note) }}"><strong>{{ "%.2f"|format(n.valeur_note) }}</strong></td>
-        <td style="font-size:12px">{{ n.prenom_prof }} {{ n.nom_prof }}</td>
-        <td style="font-size:11px;color:#9ca3af">{{ n.date_saisie or '—' }}</td>
-        <td>
-          <button class="btn btn-sec btn-xs" onclick="editNote({{ n.id_notes }}, {{ n.valeur_note }})">✏️</button>
-          <form method="POST" style="display:inline" onsubmit="return confirm('Supprimer cette note ?')">
-            <input type="hidden" name="action" value="supprimer">
-            <input type="hidden" name="note_id" value="{{ n.id_notes }}">
-            <button type="submit" class="btn btn-red btn-xs">🗑️</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-      {% if not notes %}
-      <tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:30px">Aucune note.</td></tr>
-      {% endif %}
-      </tbody>
-    </table>
-  </div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Étudiant</th><th>Matière</th><th>Note</th><th>Coefficient</th><th>Professeur</th><th>Date</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for n in notes %}
+    <tr>
+      <td style="color:#9ca3af;font-size:11px">{{ n.id }}</td>
+      <td>mat:{{ n.etudiant_id }}</td>
+      <td>{{ n.matiere.nom if n.matiere else n.matiere_id }}</td>
+      <td><span class="{{ note_color(n.valeur) }}">{{ n.valeur }}/20</span></td>
+      <td>{{ n.matiere.coefficient if n.matiere else '—' }}</td>
+      <td style="font-size:12px;color:#6b7280">prof #{{ n.professeur_id }}</td>
+      <td style="font-size:11px;color:#9ca3af">{{ (n.date_saisie or '')[:10] }}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sec btn-xs" onclick="document.getElementById('mod-n-{{ n.id }}').classList.add('open')">✏️</button>
+        <form action="/EDE/admin/notes" method="post" style="display:inline" onsubmit="return confirm('Supprimer cette note ?')">
+          <input type="hidden" name="action" value="supprimer">
+          <input type="hidden" name="note_id" value="{{ n.id }}">
+          {% if classe_id %}<input type="hidden" name="classe_id" value="{{ classe_id }}">{% endif %}
+          <button class="btn btn-red btn-xs">🗑️</button>
+        </form>
+      </td>
+    </tr>
+    <!-- Modal modifier note -->
+    <div class="modal-bg" id="mod-n-{{ n.id }}">
+      <div class="modal">
+        <button class="modal-close" onclick="document.getElementById('mod-n-{{ n.id }}').classList.remove('open')">×</button>
+        <div class="modal-title">✏️ Modifier la note</div>
+        <form method="post" action="/EDE/admin/notes{% if classe_id %}?classe_id={{ classe_id }}{% endif %}">
+          <input type="hidden" name="action" value="modifier">
+          <input type="hidden" name="note_id" value="{{ n.id }}">
+          <div class="form-group">
+            <label>Nouvelle valeur (/20)</label>
+            <input name="valeur_note" type="number" step="0.25" min="0" max="20" value="{{ n.valeur }}" required>
+          </div>
+          <button class="btn btn-primary" type="submit">✏️ Enregistrer</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:30px">
+      {% if classe_id %}Aucune note pour cette classe.{% else %}Sélectionnez une classe pour voir les notes.{% endif %}
+    </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
-
-<!-- Modal Ajouter -->
-<div class="modal-bg" id="modal-add">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('modal-add').classList.remove('open')">×</button>
-    <div class="modal-title">Ajouter une note</div>
-    <form method="POST">
-      <input type="hidden" name="action" value="ajouter">
-      <div class="form-group"><label>Classe</label>
-        <select id="filtre-classe" onchange="filtrerEtudiants()" style="width:100%">
-          <option value="">-- Choisir une classe --</option>
-          {% for c in classes %}
-          <option value="{{ c.id_classe }}">{{ c.libelle_classe }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group"><label>Etudiant</label>
-        <select name="matricule" id="sel-etudiant" required>
-          <option value="">-- Choisir l'etudiant --</option>
-          {% for e in etudiants %}
-          <option value="{{ e.matricule }}" data-classe="{{ e.Classe_id_classe }}">{{ e.prenom }} {{ e.nom }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group"><label>Matiere</label>
-        <select name="matiere_id" required>
-          <option value="">-- Choisir --</option>
-          {% for m in matieres %}
-          <option value="{{ m.id_matiere }}">{{ m.nom_matiere }} (coeff {{ m.coefficient_matiere }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group"><label>Professeur</label>
-        <select name="prof_id" required>
-          <option value="">-- Choisir --</option>
-          {% for p in professeurs %}
-          <option value="{{ p.id_prof }}">{{ p.prenom_prof }} {{ p.nom_prof }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Note (0-20)</label>
-          <input type="number" name="valeur_note" step="0.01" min="0" max="20" required></div>
-        <div class="form-group"><label>Date</label>
-          <input type="date" name="date_saisie" value="{{ today() }}"></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <button type="button" class="btn btn-sec"
-          onclick="document.getElementById('modal-add').classList.remove('open')">Annuler</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Modal Modifier -->
-<div class="modal-bg" id="modal-edit">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('modal-edit').classList.remove('open')">×</button>
-    <div class="modal-title">Modifier la note</div>
-    <form method="POST">
-      <input type="hidden" name="action" value="modifier">
-      <input type="hidden" name="note_id" id="edit-id">
-      <div class="form-group"><label>Nouvelle note (0-20)</label>
-        <input type="number" name="valeur_note" id="edit-val" step="0.01" min="0" max="20" required></div>
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <button type="button" class="btn btn-sec"
-          onclick="document.getElementById('modal-edit').classList.remove('open')">Annuler</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-function editNote(id, val) {
-  document.getElementById('edit-id').value = id;
-  document.getElementById('edit-val').value = val;
-  document.getElementById('modal-edit').classList.add('open');
-}
-function filtrerEtudiants() {
-  const cid = document.getElementById('filtre-classe').value;
-  const sel = document.getElementById('sel-etudiant');
-  Array.from(sel.options).forEach(o => {
-    o.hidden = cid && o.dataset.classe && o.dataset.classe !== cid;
-  });
-  sel.value = '';
-}
-</script>
 {% endblock %}

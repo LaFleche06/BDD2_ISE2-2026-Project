@@ -1,36 +1,36 @@
 {% extends 'base.html' %}
 {% block title %}Tableau de Bord Admin{% endblock %}
 {% block content %}
-<div class="ph"><h1>⚙️ Tableau de Bord</h1><div class="ph-sub">Administration generale</div></div>
+<div class="ph"><h1>⚙️ Tableau de Bord</h1><div class="ph-sub">Administration générale</div></div>
 <div class="stats-grid">
-  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants }}</div><div class="stat-lbl">Etudiants</div></div>
-  <div class="stat-card g"><div class="stat-val">{{ stats.nb_professeurs }}</div><div class="stat-lbl">Professeurs</div></div>
-  <div class="stat-card p"><div class="stat-val">{{ stats.nb_classes }}</div><div class="stat-lbl">Classes</div></div>
-  <div class="stat-card o"><div class="stat-val">{{ stats.nb_matieres }}</div><div class="stat-lbl">Matieres</div></div>
-  <div class="stat-card r"><div class="stat-val">{{ stats.nb_notes }}</div><div class="stat-lbl">Notes saisies</div></div>
-  <div class="stat-card"><div class="stat-val">{{ stats.moyenne_globale or '—' }}</div><div class="stat-lbl">Moyenne globale</div></div>
+  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants or 0 }}</div><div class="stat-lbl">Étudiants</div></div>
+  <div class="stat-card g"><div class="stat-val">{{ stats.nb_professeurs or 0 }}</div><div class="stat-lbl">Professeurs</div></div>
+  <div class="stat-card p"><div class="stat-val">{{ stats.nb_classes or 0 }}</div><div class="stat-lbl">Classes</div></div>
+  <div class="stat-card o"><div class="stat-val">{{ stats.nb_matieres or 0 }}</div><div class="stat-lbl">Matières</div></div>
+  <div class="stat-card r"><div class="stat-val">{{ stats.nb_notes or 0 }}</div><div class="stat-lbl">Notes saisies</div></div>
+  <div class="stat-card"><div class="stat-val">{{ stats.moyenne_generale or stats.moyenne_globale or '—' }}</div><div class="stat-lbl">Moyenne globale</div></div>
 </div>
 <div class="form-row">
   <div class="card">
-    <div class="card-header"><span class="card-title">🚀 Acces rapide</span></div>
+    <div class="card-header"><span class="card-title">🚀 Accès rapide</span></div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <a href="/EDE/admin/etudiants" class="btn btn-primary">👥 Gerer les etudiants</a>
-      <a href="/EDE/admin/professeurs" class="btn btn-sec">📚 Gerer les professeurs</a>
-      <a href="/EDE/admin/matieres" class="btn btn-sec">📖 Gerer les matieres</a>
-      <a href="/EDE/admin/classes" class="btn btn-sec">🏫 Gerer les classes</a>
-      <a href="/EDE/admin/notes" class="btn btn-sec">📝 Gerer les notes</a>
-      <a href="/EDE/admin/classements" class="btn btn-green">🏆 Classements et resultats</a>
+      <a href="/EDE/admin/etudiants" class="btn btn-primary">👥 Gérer les étudiants</a>
+      <a href="/EDE/admin/professeurs" class="btn btn-sec">📚 Gérer les professeurs</a>
+      <a href="/EDE/admin/matieres" class="btn btn-sec">📖 Gérer les matières</a>
+      <a href="/EDE/admin/classes" class="btn btn-sec">🏫 Gérer les classes</a>
+      <a href="/EDE/admin/notes" class="btn btn-sec">📝 Gérer les notes</a>
+      <a href="/EDE/admin/classements" class="btn btn-green">🏆 Classements et résultats</a>
     </div>
   </div>
   <div class="card">
-    <div class="card-header"><span class="card-title">ℹ️ Informations systeme</span></div>
+    <div class="card-header"><span class="card-title">ℹ️ Informations système</span></div>
     <table>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">SCHEMA BD</td><td>EtudiantDB (SQL Server)</td></tr>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">TABLES</td><td>9 tables</td></tr>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">VUES</td><td>7 vues SQL</td></tr>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">FRAMEWORK</td><td>Flask + pyodbc</td></tr>
+      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">API</td><td>FastAPI — EC2 + RDS</td></tr>
+      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">AUTH</td><td>JWT Bearer Token</td></tr>
+      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">RÔLES</td><td>admin / prof / etudiant</td></tr>
+      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">FRAMEWORK</td><td>Flask + requests</td></tr>
     </table>
-    <br><a href="/EDE/test-db" class="btn btn-sec btn-sm">🔌 Tester la connexion BD</a>
+    <br><a href="/EDE/test-api" class="btn btn-sec btn-sm">🔌 Tester la connexion API</a>
   </div>
 </div>
 {% endblock %}

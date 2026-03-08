@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Test API{% endblock %}
+{% block content %}
+<div class="ph"><h1>🔌 Test de connexion API</h1></div>
+<div class="card">
+  {% if status %}
+  <div class="alert alert-success">✅ L'API REST répond correctement.</div>
+  <pre style="background:#f3f4f6;padding:12px;border-radius:8px;font-size:12px">{{ data }}</pre>
+  {% else %}
+  <div class="alert alert-danger">❌ L'API ne répond pas. Vérifiez l'URL ou la connexion réseau.</div>
+  <pre style="background:#fee2e2;padding:12px;border-radius:8px;font-size:12px">{{ data }}</pre>
+  {% endif %}
+</div>
+{% endblock %}

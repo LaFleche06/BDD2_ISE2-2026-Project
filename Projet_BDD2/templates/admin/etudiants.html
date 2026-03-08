@@ -1,33 +1,55 @@
 {% extends 'base.html' %}
-{% block title %}Gestion Etudiants{% endblock %}
+{% block title %}Étudiants{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>👥 Etudiants</h1><div class="ph-sub">{{ etudiants|length }} etudiant(s)</div></div>
-  <a href="/EDE/admin/etudiants/ajouter" class="btn btn-primary">+ Ajouter</a>
+  <div><h1>👥 Étudiants</h1><div class="ph-sub">{{ etudiants|length }} étudiant(s) enregistré(s)</div></div>
+  <a href="/EDE/admin/etudiants/ajouter" class="btn btn-primary">+ Ajouter un étudiant</a>
 </div>
-<div class="card">
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Matricule</th><th>Nom complet</th><th>Classe</th><th>Annee</th><th>Telephone</th><th>Actions</th></tr></thead>
-      <tbody>
-      {% for e in etudiants %}
+<div class="table-wrap">
+  <table>
+    <thead>
       <tr>
-        <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">{{ e.matricule }}</code></td>
-        <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
-        <td><span class="badge b-blue">{{ e.libelle_classe or '—' }}</span></td>
-        <td style="font-size:12px;color:#9ca3af">{{ e.annee_scolaire or '—' }}</td>
-        <td style="font-size:12px">{{ e.telephone_etudiant or '—' }}</td>
-        <td>
-          <a href="/EDE/admin/etudiants/modifier/{{ e.matricule }}" class="btn btn-sec btn-xs">✏️ Modifier</a>
-          <form method="POST" action="/EDE/admin/etudiants/supprimer/{{ e.matricule }}"
-                style="display:inline" onsubmit="return confirm('Supprimer {{ e.prenom }} {{ e.nom }} ?')">
-            <button type="submit" class="btn btn-red btn-xs">🗑️ Supprimer</button>
-          </form>
-        </td>
+        <th>Matricule</th><th>Nom complet</th><th>Classe</th><th>Email</th>
+        <th>Statut</th><th>Actions</th>
       </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    </thead>
+    <tbody>
+    {% for e in etudiants %}
+    <tr>
+      <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:11px">{{ e.matricule }}</code></td>
+      <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
+      <td><span class="badge b-blue">{{ e.classe.libelle if e.classe else '—' }}</span></td>
+      <td style="font-size:12px;color:#6b7280">{{ e.utilisateur.email if e.utilisateur else '—' }}</td>
+      <td>
+        {% if e.utilisateur and e.utilisateur.actif %}
+          <span class="badge b-green">Actif</span>
+        {% else %}
+          <span class="badge b-red">Inactif</span>
+        {% endif %}
+      </td>
+      <td style="white-space:nowrap">
+        <a href="/EDE/admin/etudiants/modifier/{{ e.matricule }}" class="btn btn-sec btn-xs">✏️</a>
+        <form action="/EDE/admin/etudiants/supprimer/{{ e.matricule }}" method="post" style="display:inline"
+              onsubmit="return confirm('Supprimer {{ e.prenom }} {{ e.nom }} ?')">
+          <button class="btn btn-red btn-xs">🗑️</button>
+        </form>
+        {% if e.utilisateur %}
+          {% if e.utilisateur.actif %}
+          <form action="/EDE/admin/utilisateurs/{{ e.utilisateur.id }}/desactiver" method="post" style="display:inline">
+            <button class="btn btn-sec btn-xs" title="Désactiver">🔒</button>
+          </form>
+          {% else %}
+          <form action="/EDE/admin/utilisateurs/{{ e.utilisateur.id }}/activer" method="post" style="display:inline">
+            <button class="btn btn-green btn-xs" title="Activer">🔓</button>
+          </form>
+          {% endif %}
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px">Aucun étudiant enregistré.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}

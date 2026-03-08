@@ -1,32 +1,33 @@
 {% extends 'base.html' %}
 {% block title %}Mon Tableau de Bord{% endblock %}
 {% block content %}
+{% set d = dash %}
 <div class="ph">
   <div>
-    <h1>Bonjour, {{ etudiant.prenom }} 👋</h1>
-    <div class="ph-sub">{{ etudiant.libelle_classe }} — {{ etudiant.annee_scolaire }}</div>
+    <h1>Bonjour, {{ d.prenom }} 👋</h1>
+    <div class="ph-sub">{{ d.classe }} — {{ d.annee_scolaire or '' }}</div>
   </div>
 </div>
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-val {% if moyenne >= 10 %}note-good{% elif moyenne >= 8 %}note-avg{% else %}note-bad{% endif %}">
-      {{ "%.2f"|format(moyenne) }}/20
+    <div class="stat-val {% set mv = d.moyenne_generale|float(0) %}{% if mv >= 10 %}note-good{% elif mv >= 8 %}note-avg{% else %}note-bad{% endif %}">
+      {{ d.moyenne_generale or '—' }}/20
     </div>
-    <div class="stat-lbl">Moyenne generale</div>
+    <div class="stat-lbl">Moyenne générale</div>
   </div>
   <div class="stat-card g">
-    <div class="stat-val">{{ nb_notes }}</div>
+    <div class="stat-val">{{ d.notes|length }}</div>
     <div class="stat-lbl">Notes saisies</div>
   </div>
   <div class="stat-card p">
-    <div class="stat-val">{{ rang if rang != '-' else '—' }}</div>
+    <div class="stat-val">{{ d.rang if d.rang else '—' }}</div>
     <div class="stat-lbl">Rang dans la classe</div>
   </div>
-  <div class="stat-card {% if moyenne >= 10 %}g{% else %}r{% endif %}">
+  <div class="stat-card {% set mv2 = d.moyenne_generale|float(0) %}{% if mv2 >= 10 %}g{% else %}r{% endif %}">
     <div class="stat-val" style="font-size:18px">
-      {% if moyenne >= 10 %}✅ Admis{% else %}⚠️ Ajourne{% endif %}
+      {% if d.decision %}{{ d.decision }}{% elif d.moyenne_generale and d.moyenne_generale|float >= 10 %}✅ Admis{% else %}⚠️ Ajourné{% endif %}
     </div>
-    <div class="stat-lbl">Situation actuelle</div>
+    <div class="stat-lbl">Décision officielle</div>
   </div>
 </div>
 <div class="card">
@@ -34,24 +35,11 @@
   <table>
     <tr>
       <td style="width:180px;color:#9ca3af;font-size:12px;font-weight:600">MATRICULE</td>
-      <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:12px">{{ etudiant.matricule }}</code></td>
+      <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:12px">{{ d.matricule }}</code></td>
     </tr>
-    <tr>
-      <td style="color:#9ca3af;font-size:12px;font-weight:600">NOM COMPLET</td>
-      <td>{{ etudiant.prenom }} {{ etudiant.nom }}</td>
-    </tr>
-    <tr>
-      <td style="color:#9ca3af;font-size:12px;font-weight:600">CLASSE</td>
-      <td><span class="badge b-blue">{{ etudiant.libelle_classe }}</span></td>
-    </tr>
-    <tr>
-      <td style="color:#9ca3af;font-size:12px;font-weight:600">ANNEE</td>
-      <td>{{ etudiant.annee_scolaire }}</td>
-    </tr>
-    <tr>
-      <td style="color:#9ca3af;font-size:12px;font-weight:600">TELEPHONE</td>
-      <td>{{ etudiant.telephone_etudiant or '—' }}</td>
-    </tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">NOM COMPLET</td><td>{{ d.prenom }} {{ d.nom }}</td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">CLASSE</td><td><span class="badge b-blue">{{ d.classe }}</span></td></tr>
+    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">ANNÉE</td><td>{{ d.annee_scolaire or '—' }}</td></tr>
   </table>
   <br>
   <a href="/EDE/etudiant/notes" class="btn btn-primary">📊 Voir mes notes →</a>

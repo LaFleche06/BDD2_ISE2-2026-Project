@@ -2,8 +2,10 @@
 {% block title %}Tableau de bord Professeur{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>Bonjour, {{ prof.prenom_prof }} 👋</h1>
-  <div class="ph-sub">Espace Professeur</div></div>
+  <div>
+    <h1>Bonjour, {{ session.nom }} 👋</h1>
+    <div class="ph-sub">Espace Professeur</div>
+  </div>
 </div>
 <div class="stats-grid">
   <div class="stat-card">
@@ -12,22 +14,22 @@
   </div>
   <div class="stat-card g">
     <div class="stat-val">{{ matieres|length }}</div>
-    <div class="stat-lbl">Matieres enseignees</div>
+    <div class="stat-lbl">Matières enseignées</div>
   </div>
 </div>
 <div class="form-row">
   <div class="card">
-    <div class="card-header"><span class="card-title">📚 Mes matieres et classes</span></div>
-    {% if matieres %}
+    <div class="card-header"><span class="card-title">📚 Mes matières et classes</span></div>
+    {% if interventions %}
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Matiere</th><th>Coefficient</th><th>Classe</th></tr></thead>
+        <thead><tr><th>Matière</th><th>Coefficient</th><th>Classe</th></tr></thead>
         <tbody>
-        {% for m in matieres %}
+        {% for i in interventions %}
         <tr>
-          <td><strong>{{ m.nom_matiere }}</strong></td>
-          <td><span class="badge b-blue">{{ m.coefficient_matiere }}</span></td>
-          <td><span class="badge b-purple">{{ m.libelle_classe }}</span></td>
+          <td><strong>{{ i.matiere.nom }}</strong></td>
+          <td><span class="badge b-blue">{{ i.matiere.coefficient }}</span></td>
+          <td><span class="badge b-purple">{{ i.classe.libelle }}</span></td>
         </tr>
         {% endfor %}
         </tbody>
@@ -38,9 +40,9 @@
     {% endif %}
   </div>
   <div class="card">
-    <div class="card-header"><span class="card-title">🚀 Acces rapide</span></div>
+    <div class="card-header"><span class="card-title">🚀 Accès rapide</span></div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <a href="/EDE/professeur/notes" class="btn btn-primary">✏️ Saisir / gerer les notes</a>
+      <a href="/EDE/professeur/notes" class="btn btn-primary">✏️ Saisir / gérer les notes</a>
       <a href="/EDE/professeur/moyennes" class="btn btn-sec">📈 Voir les moyennes</a>
       <a href="/EDE/professeur/classe" class="btn btn-sec">🏫 Mes classes</a>
     </div>

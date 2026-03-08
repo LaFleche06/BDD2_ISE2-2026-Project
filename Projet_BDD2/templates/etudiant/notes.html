@@ -1,75 +1,47 @@
 {% extends 'base.html' %}
 {% block title %}Mes Notes{% endblock %}
-
 {% block content %}
-
 <div class="ph">
-  <div>
-    <h1>📊 Mes Notes</h1>
-    <div class="ph-sub">{{ notes|length }} note(s) enregistrée(s)</div>
-  </div>
+  <div><h1>📊 Mes Notes</h1></div>
 </div>
-
-<div class="card" style="padding:16px;margin-bottom:16px">
-  <p style="font-size:13px;color:#6b7280">
-  Cette page vous permet de consulter vos résultats académiques.
-  </p>
-</div>
-
-<div class="card">
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Matière</th>
-          <th>Coefficient</th>
-          <th>Note /20</th>
-          <th>Professeur</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-      {% for n in notes %}
-      <tr>
-
-        <td>
-          <strong>{{ n.nom_matiere }}</strong>
-        </td>
-
-        <td>
-          <span class="badge b-blue">
-          {{ n.coefficient_matiere }}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Matière</th><th>Coefficient</th><th>Note</th><th>Date de saisie</th></tr></thead>
+    <tbody>
+    {% set total_coef = namespace(v=0) %}
+    {% set total_pond = namespace(v=0) %}
+    {% for n in notes %}
+    {% set coef = n.matiere.coefficient|float(1) %}
+    {% set val  = n.valeur|float(0) %}
+    {% set total_coef.v = total_coef.v + coef %}
+    {% set total_pond.v = total_pond.v + val * coef %}
+    <tr>
+      <td><strong>{{ n.matiere.nom if n.matiere else '—' }}</strong></td>
+      <td><span class="badge b-blue">{{ n.matiere.coefficient if n.matiere else '—' }}</span></td>
+      <td><span class="{{ note_color(n.valeur) }}">{{ n.valeur }}/20</span></td>
+      <td style="font-size:12px;color:#9ca3af">{{ (n.date_saisie or '')[:10] }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px">Aucune note pour le moment.</td></tr>
+    {% endfor %}
+    </tbody>
+    {% if notes %}
+    <tfoot>
+      <tr style="background:#fafafa">
+        <td colspan="2" style="font-weight:700;font-size:13px">Moyenne pondérée</td>
+        {% if total_coef.v > 0 %}
+        {% set moy = total_pond.v / total_coef.v %}
+        <td colspan="2"><span class="{{ note_color(moy) }}" style="font-size:15px;font-weight:900">{{ '%.2f'|format(moy) }}/20</span>
+          <span class="badge {% if moy >= 10 %}b-green{% else %}b-red{% endif %}" style="margin-left:8px">
+            {% if moy >= 10 %}✅ Admis{% else %}⚠️ Ajourné{% endif %}
           </span>
         </td>
-
-        <td class="{{ note_color(n.valeur_note) }}">
-          <strong>{{ "%.2f"|format(n.valeur_note) }}</strong>
-        </td>
-
-        <td style="font-size:13px">
-          {{ n.prenom_prof }} {{ n.nom_prof }}
-        </td>
-
-        <td style="font-size:12px;color:#9ca3af">
-          {{ n.date_saisie or '—' }}
-        </td>
-
+        {% else %}
+        <td colspan="2">—</td>
+        {% endif %}
       </tr>
-      {% endfor %}
-
-      {% if not notes %}
-      <tr>
-        <td colspan="5" style="text-align:center;color:#9ca3af;padding:30px">
-        Aucune note disponible.
-        </td>
-      </tr>
-      {% endif %}
-
-      </tbody>
-    </table>
-  </div>
+    </tfoot>
+    {% endif %}
+  </table>
 </div>
-
 {% endblock %}
