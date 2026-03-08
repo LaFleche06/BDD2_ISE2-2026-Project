@@ -140,6 +140,57 @@ def stats_globales(
     }
 
 
+@router.get(
+    "/stats/classes/{classe_id}",
+    summary="Statistiques d'une classe",
+)
+def stats_classe(
+    classe_id: int,
+    db: Session = Depends(get_db),
+    _: object = admin_only,
+):
+    classe = db.query(Classe).filter(Classe.id == classe_id).first()
+    if not classe:
+        raise HTTPException(status_code=404, detail="Classe introuvable")
+
+    result = db.execute(
+        text(f"""
+            SELECT
+                COUNT(*)                                               AS nb_etudiants,
+                SUM(CASE WHEN moy >= 10 THEN 1 ELSE 0 END)            AS nb_admis,
+                SUM(CASE WHEN moy < 10  THEN 1 ELSE 0 END)            AS nb_ajournes,
+                ROUND(AVG(moy), 2)                                     AS moyenne_classe,
+                MAX(moy)                                               AS meilleure_moyenne,
+                MIN(moy)                                               AS moins_bonne_moyenne
+            FROM (
+                SELECT
+                    e.matricule,
+                    {_MOYENNE_SQL} AS moy
+                FROM etudiant e
+                JOIN note n ON n.etudiant_id = e.matricule
+                JOIN matiere m ON m.id = n.matiere_id
+                WHERE e.classe_id = :classe_id
+                GROUP BY e.matricule
+            ) AS moyennes
+        """),
+        {"classe_id": classe_id},
+    ).fetchone()
+
+    nb_etudiants = result[0] or 0
+    nb_admis     = result[1] or 0
+
+    return {
+        "classe_id":          classe_id,
+        "classe":             classe.libelle,
+        "annee_scolaire":     classe.annee_scolaire,
+        "nb_etudiants":       nb_etudiants,
+        "nb_admis":           nb_admis,
+        "nb_ajournes":        result[2] or 0,
+        "taux_reussite_pct":  round((nb_admis / nb_etudiants) * 100, 1) if nb_etudiants else None,
+        "moyenne_classe":     float(result[3]) if result[3] is not None else None,
+        "meilleure_moyenne":  float(result[4]) if result[4] is not None else None,
+        "moins_bonne_moyenne": float(result[5]) if result[5] is not None else None,
+    }
 # ─────────────────────────────────────────────
 # CLASSEMENT PAR CLASSE
 # ─────────────────────────────────────────────
@@ -258,6 +309,30 @@ def sauvegarder_classement(
     db.commit()
     return {"message": f"Résultats sauvegardés pour {len(result)} étudiant(s)"}
 
+@router.get(
+    "/resultats/{classe_id}",
+    response_model=list[ResultatResponse],
+    summary="Résultats officiels sauvegardés d'une classe",
+)
+def resultats_classe(
+    classe_id: int,
+    db: Session = Depends(get_db),
+    _: object = admin_only,
+):
+    """
+    Retourne les résultats officiels sauvegardés pour une classe.
+    Vide si aucune sauvegarde n'a encore été faite.
+    """
+    classe = db.query(Classe).filter(Classe.id == classe_id).first()
+    if not classe:
+        raise HTTPException(status_code=404, detail="Classe introuvable")
+
+    return (
+        db.query(Resultat)
+        .filter(Resultat.classe_id == classe_id)
+        .order_by(Resultat.rang)
+        .all()
+    )
 
 # ─────────────────────────────────────────────
 # CONSULTATION GLOBALE DES NOTES

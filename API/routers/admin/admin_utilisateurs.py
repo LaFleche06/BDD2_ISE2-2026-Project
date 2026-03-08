@@ -24,7 +24,7 @@ from schemas.schemas import (
     ProfesseurCreate, ProfesseurUpdate, ProfesseurResponse, ProfesseurDetailResponse,
     InterventionCreate, InterventionResponse,
     AdministrateurResponse, AdministrateurCreate, AdministrateurUpdate,
-    UtilisateurUpdate, NoteResponse,
+    UtilisateurUpdate, NoteResponse,ResetPasswordRequest
 )
 from core.dependencies import require_role
 from core.security import hash_password

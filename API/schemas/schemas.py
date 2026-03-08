@@ -329,3 +329,13 @@ class ClassementClasse(BaseModel):
     classe: str
     annee_scolaire: Optional[str]
     classement: list[EntreeClassement]
+
+class ResetPasswordRequest(BaseModel):
+    nouveau_mot_de_passe: str
+
+    @field_validator("nouveau_mot_de_passe")
+    @classmethod
+    def mdp_valide(cls, v):
+        if len(v) < 6:
+            raise ValueError("Le mot de passe doit faire au moins 6 caractères")
+        return v
