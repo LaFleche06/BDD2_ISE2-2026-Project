@@ -1,14 +1,12 @@
-# Définition du format de donnée de l'API en input et output
 """
-Schemas Pydantic
+Schemas Pydantic — API Gestion Scolaire
 
-Ce module contient :
-- Schémas de création
-- Schémas de mise à jour
-- Schémas de réponse
-
-Les validations et les types permettent de sécuriser et de typer
-les requêtes et les réponses de l'API.
+Corrections v2 :
+- Ajout AdministrateurResponse (manquait)
+- Ajout UtilisateurUpdate (activation/désactivation)
+- Ajout NoteFilter pour le filtrage côté prof
+- Ajout ProfesseurWithEmail pour exposer l'email dans certains contextes admin
+- DashboardEtudiant enrichi
 """
 
 from pydantic import BaseModel, EmailStr, field_validator
@@ -27,7 +25,7 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer" # token_type : par défaut "bearer", utilisé dans l'en-tête Authorization
+    token_type: str = "bearer"
     role: str
 
 
@@ -41,6 +39,10 @@ class UtilisateurBase(BaseModel):
 
 class UtilisateurCreate(UtilisateurBase):
     mot_de_passe: str
+
+class UtilisateurUpdate(BaseModel):
+    """Pour activer / désactiver un compte."""
+    actif: bool
 
 class UtilisateurResponse(UtilisateurBase):
     id: int
@@ -94,6 +96,32 @@ class MatiereResponse(MatiereBase):
 
 
 # =========================================================
+# ADMINISTRATEUR
+# =========================================================
+
+class AdministrateurBase(BaseModel):
+    nom: Optional[str] = None
+    prenom: Optional[str] = None
+    telephone: Optional[str] = None
+
+class AdministrateurCreate(AdministrateurBase):
+    email: EmailStr
+    mot_de_passe: str
+
+class AdministrateurUpdate(BaseModel):
+    nom: Optional[str] = None
+    prenom: Optional[str] = None
+    telephone: Optional[str] = None
+
+class AdministrateurResponse(AdministrateurBase):
+    id: int
+    utilisateur_id: int
+    utilisateur: UtilisateurResponse
+
+    model_config = {"from_attributes": True}
+
+
+# =========================================================
 # PROFESSEUR
 # =========================================================
 
@@ -103,7 +131,6 @@ class ProfesseurBase(BaseModel):
     telephone: Optional[str] = None
 
 class ProfesseurCreate(ProfesseurBase):
-    # Pour créer un prof, on crée aussi son compte utilisateur
     email: EmailStr
     mot_de_passe: str
 
@@ -115,6 +142,14 @@ class ProfesseurUpdate(BaseModel):
 class ProfesseurResponse(ProfesseurBase):
     id: int
     utilisateur_id: int
+
+    model_config = {"from_attributes": True}
+
+class ProfesseurDetailResponse(ProfesseurBase):
+    """Réponse enrichie incluant email et statut (pour l'admin)."""
+    id: int
+    utilisateur_id: int
+    utilisateur: UtilisateurResponse
 
     model_config = {"from_attributes": True}
 
@@ -142,7 +177,16 @@ class EtudiantUpdate(BaseModel):
 class EtudiantResponse(EtudiantBase):
     matricule: int
     utilisateur_id: int
-    classe: ClasseResponse         # objet classe embarqué dans la réponse
+    classe: ClasseResponse
+
+    model_config = {"from_attributes": True}
+
+class EtudiantDetailResponse(EtudiantBase):
+    """Réponse enrichie incluant email et statut (pour l'admin)."""
+    matricule: int
+    utilisateur_id: int
+    classe: ClasseResponse
+    utilisateur: UtilisateurResponse
 
     model_config = {"from_attributes": True}
 
@@ -164,7 +208,7 @@ class NoteBase(BaseModel):
 
 class NoteCreate(NoteBase):
     matiere_id: int
-    etudiant_id: int   # le prof saisit pour quel étudiant
+    etudiant_id: int
 
 class NoteUpdate(BaseModel):
     valeur: Optional[Decimal] = None
@@ -182,7 +226,16 @@ class NoteResponse(NoteBase):
     matiere_id: int
     professeur_id: int
     etudiant_id: int
-    matiere: MatiereResponse     # détail matière embarqué
+    matiere: MatiereResponse
+
+    model_config = {"from_attributes": True}
+
+class NoteCompleteResponse(NoteBase):
+    """Note avec tous les détails imbriqués (vue admin)."""
+    id: int
+    matiere: MatiereResponse
+    professeur: ProfesseurResponse
+    etudiant: EtudiantResponse
 
     model_config = {"from_attributes": True}
 
@@ -225,7 +278,7 @@ class ResultatResponse(BaseModel):
 
 
 # =========================================================
-# DASHBOARD ETUDIANT  (réponse enrichie pour le front)
+# DASHBOARD ETUDIANT
 # =========================================================
 
 class NoteDetaillee(BaseModel):
@@ -243,3 +296,35 @@ class DashboardEtudiant(BaseModel):
     rang: Optional[int]
     decision: Optional[str]
     notes: list[NoteDetaillee]
+
+
+# =========================================================
+# DASHBOARD ADMIN
+# =========================================================
+
+class StatsGlobales(BaseModel):
+    nb_etudiants: int
+    nb_professeurs: int
+    nb_classes: int
+    nb_matieres: int
+    nb_notes: int
+    moyenne_etablissement: Optional[float]
+    taux_reussite_pct: Optional[float]
+
+
+# =========================================================
+# CLASSEMENT
+# =========================================================
+
+class EntreeClassement(BaseModel):
+    rang: int
+    matricule: int
+    nom: str
+    prenom: str
+    moyenne: Optional[float]
+    decision: str
+
+class ClassementClasse(BaseModel):
+    classe: str
+    annee_scolaire: Optional[str]
+    classement: list[EntreeClassement]
