@@ -222,7 +222,8 @@ def prof_moyennes():
     classe_id = request.args.get('classe_id', type=int)
     if not classe_id and classes:
         classe_id = classes[0]['id']
-    classement = api.get_classement_prof(_token(), classe_id) if classe_id else []
+    c_data = api.get_classement_prof(_token(), classe_id) if classe_id else []
+    classement = c_data.get('classement', []) if isinstance(c_data, dict) else c_data
     return render_template('prof/moyennes.html',
                            classes=classes, classe_id=classe_id, classement=classement)
 
@@ -547,7 +548,8 @@ def admin_notes():
 def admin_classements():
     classes   = api.get_all_classes(_token())
     classe_id = request.args.get('classe_id', type=int) or (classes[0]['id'] if classes else None)
-    classement = api.get_classement_classe(_token(), classe_id) if classe_id else []
+    c_data = api.get_classement_classe(_token(), classe_id) if classe_id else []
+    classement = c_data.get('classement', []) if isinstance(c_data, dict) else c_data
     stats      = api.get_stats_classe(_token(), classe_id) if classe_id else {}
     resultats  = api.get_resultats_classe(_token(), classe_id) if classe_id else []
     return render_template('admin/classements.html',

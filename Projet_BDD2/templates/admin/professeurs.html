@@ -2,7 +2,7 @@
 {% block title %}Professeurs{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>📚 Professeurs</h1><div class="ph-sub">{{ professeurs|length }} professeur(s)</div></div>
+  <div><h1>📚 Professeurs</h1><div class="ph-sub">{{ professeurs|length }} professeurs</div></div>
   <a href="/EDE/admin/professeurs/ajouter" class="btn btn-primary">+ Ajouter un professeur</a>
 </div>
 <div class="table-wrap">
@@ -28,16 +28,16 @@
         <a href="/EDE/admin/professeurs/modifier/{{ p.id }}" class="btn btn-sec btn-xs">✏️ Gérer</a>
         <form action="/EDE/admin/professeurs/supprimer/{{ p.id }}" method="post" style="display:inline"
               onsubmit="return confirm('Supprimer {{ p.prenom }} {{ p.nom }} ?')">
-          <button class="btn btn-red btn-xs">🗑️</button>
+          <button class="btn btn-red btn-xs">🗑️ Suppr.</button>
         </form>
         {% if p.utilisateur %}
           {% if p.utilisateur.actif %}
           <form action="/EDE/admin/utilisateurs/{{ p.utilisateur.id }}/desactiver" method="post" style="display:inline">
-            <button class="btn btn-sec btn-xs" title="Désactiver">🔒</button>
+            <button class="btn btn-sec btn-xs" title="Désactiver">🔒 Désactiver</button>
           </form>
           {% else %}
           <form action="/EDE/admin/utilisateurs/{{ p.utilisateur.id }}/activer" method="post" style="display:inline">
-            <button class="btn btn-green btn-xs" title="Activer">🔓</button>
+            <button class="btn btn-green btn-xs" title="Activer">🔓 Activer</button>
           </form>
           {% endif %}
         {% endif %}

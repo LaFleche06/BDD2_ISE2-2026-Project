@@ -120,7 +120,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f8ef7;
 <body>
 <!-- TOPBAR -->
 <nav class="topbar">
-  <a class="brand" href="/EDE/index">EDE<span>.</span></a>
+  <a class="brand" href="/EDE/dashboard">EDE<span>.</span></a>
   <div class="spacer"></div>
   {% if session.user_id %}
     {% if session.role=='etudiant' %}<span class="role-badge rb-etudiant">🎓 ETUDIANT</span>
@@ -157,8 +157,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f8ef7;
     <a class="nav-link {% if request.endpoint=='admin_classes' %}active{% endif %}" href="/EDE/admin/classes"><span class="ico">🏫</span>Classes</a>
     <a class="nav-link {% if request.endpoint=='admin_notes' %}active{% endif %}" href="/EDE/admin/notes"><span class="ico">📝</span>Notes</a>
   {% endif %}
-  <div class="nav-label">Systeme</div>
-  <a class="nav-link" href="/EDE/test-api"><span class="ico">🔌</span>Test API</a>
+  <div class="nav-label">Système</div>
+  <a class="nav-link" href="/EDE/test-api"><span class="ico">🔌</span>État de l'API</a>
 </aside>
 {% endif %}
 
