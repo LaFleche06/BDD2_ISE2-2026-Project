@@ -48,7 +48,7 @@ from models.models import (
     Note,
     Resultat
 )
-from schemas.schemas import NoteResponse
+from schemas.schemas import NoteResponse,ResultatResponse
 from core.dependencies import require_role
 
 
