@@ -345,3 +345,18 @@ def delete_intervention(data: InterventionCreate, db: Session = Depends(get_db),
 
     db.delete(intervention)
     db.commit()
+
+@router.put("/utilisateurs/{user_id}/reset-password", summary="Réinitialiser le mot de passe")
+def reset_password(
+    user_id: int,
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+    _=admin_only,
+):
+    """L'admin réinitialise le mot de passe d'un utilisateur."""
+    user = db.query(Utilisateur).filter(Utilisateur.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    user.mot_de_passe = hash_password(data.nouveau_mot_de_passe)
+    db.commit()
+    return {"message": f"Mot de passe réinitialisé pour {user.email}"}
