@@ -1,12 +1,13 @@
 """
-Schemas Pydantic — API Gestion Scolaire
+Schemas Pydantic
 
-Corrections v2 :
-- Ajout AdministrateurResponse (manquait)
-- Ajout UtilisateurUpdate (activation/désactivation)
-- Ajout NoteFilter pour le filtrage côté prof
-- Ajout ProfesseurWithEmail pour exposer l'email dans certains contextes admin
-- DashboardEtudiant enrichi
+Ce module contient :
+- Schémas de création
+- Schémas de mise à jour
+- Schémas de réponse
+
+Les validations et les types permettent de sécuriser et de typer
+les requêtes et les réponses de l'API.
 """
 
 from pydantic import BaseModel, EmailStr, field_validator
