@@ -47,6 +47,11 @@ def _token():
 
 
 # ── PAGES PUBLIQUES ───────────────────────────────────────────────────────────
+@app.route("/")
+def root():
+    return redirect(url_for("index"))
+
+
 @app.route('/EDE/')
 @app.route('/EDE/index')
 def index():
