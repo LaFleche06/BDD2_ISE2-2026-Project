@@ -42,14 +42,6 @@
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
   <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants or 0 }}</div><div class="stat-lbl">Étudiants</div></div>
   <div class="stat-card g"><div class="stat-val">{{ stats.moyenne_classe or '—' }}</div><div class="stat-lbl">Moy. classe</div></div>
-  <div class="stat-card r">
-    <div class="stat-val">{% if stats.note_min is not none and stats.note_min != '' %}{{ stats.note_min }}{% else %}—{% endif %}</div>
-    <div class="stat-lbl">Note min</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-val">{% if stats.note_max is not none and stats.note_max != '' %}{{ stats.note_max }}{% else %}—{% endif %}</div>
-    <div class="stat-lbl">Note max</div>
-  </div>
   <div class="stat-card g"><div class="stat-val">{{ stats.nb_admis or 0 }}</div><div class="stat-lbl">Admis</div></div>
   <div class="stat-card r"><div class="stat-val">{{ stats.nb_ajournes or 0 }}</div><div class="stat-lbl">Ajournés</div></div>
 </div>

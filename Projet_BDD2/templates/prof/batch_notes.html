@@ -40,14 +40,16 @@
         <td style="color:#9ca3af;font-size:11px">{{ e.matricule }}</td>
         <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
         <td>
-            {% if e.matricule in existing_notes %}
-            <span class="badge b-purple">{{ existing_notes[e.matricule].valeur }}/20</span>
+            {% set mat_str = e.matricule | string %}
+            {% if mat_str in existing_notes %}
+            <span class="badge b-purple">{{ "%.2f"|format(existing_notes[mat_str].valeur) }}/20</span>
             {% else %}
             <span style="color:#9ca3af;font-size:12px">Aucune</span>
             {% endif %}
         </td>
         <td>
-            {% if e.matricule not in existing_notes %}
+            {% set mat_str = e.matricule | string %}
+            {% if mat_str not in existing_notes %}
             <input type="number" step="0.25" min="0" max="20" class="batch-input" data-eid="{{ e.matricule }}" placeholder="Saisir note..." style="max-width: 150px; padding: 6px 10px;">
             {% else %}
             <span class="badge b-grey">Déjà saisie</span>

@@ -339,11 +339,11 @@ def prof_moyennes():
     # Utiliser l'endpoint professeur pour avoir les matricules cohérents
     etudiants_classe = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
     # Les notes ont etudiant_id = matricule, on construit un dict matricule → étudiant
-    etud_by_matricule = {e['matricule']: e for e in etudiants_classe}
+    etud_by_matricule = {str(e['matricule']): e for e in etudiants_classe}
 
     classement_matiere = []
     for n in notes_matiere:
-        etud = etud_by_matricule.get(n['etudiant_id'])
+        etud = etud_by_matricule.get(str(n['etudiant_id']))
         if not etud:
             # Fallback : essayer en cherchant dans les notes imbriquées si disponible
             etud = n.get('etudiant') or {}
