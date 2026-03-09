@@ -81,6 +81,9 @@
             <td style="text-align:center">
               {% if n.valeur is not none %}
                 <span class="fs-5 {{ note_color(n.valeur) }}" style="font-weight:800">{{ "%.2f"|format(n.valeur|float) }}</span>
+                {% if n.rang_matiere is not none %}
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Rang: <strong>{{ n.rang_matiere }}</strong>{% if n.total_etudiants %}/{{ n.total_etudiants }}{% endif %}</div>
+                {% endif %}
               {% else %}
                 <span style="color:var(--text-muted);font-style:italic">Note pas encore dispo</span>
               {% endif %}
