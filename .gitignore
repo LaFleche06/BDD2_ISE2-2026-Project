@@ -1,5 +1,29 @@
+# Environnements virtuels
 .env
-/env
-__pycache__/
+env/
+venv/
 Projet_BDD2/venv/
 Projet_BDD2/venv312/
+
+# Fichiers de cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers de test temporaires et sorties
+nul
+diff_output.txt
+test_fetch_output.html
+test_db.py
+
+# Base de données locales
+*.db
+ecole.db
+
+# IDEs
+.idea/
+.vscode/
+
+# Divers
+.DS_Store
