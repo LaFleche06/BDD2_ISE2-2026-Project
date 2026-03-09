@@ -4,8 +4,28 @@ Bienvenue sur le dépôt du projet Campus ENSAE EDE.
 Ce projet est une plateforme complète permettant la gestion de la scolarité : gestion des étudiants, professeurs, classes, matières, ainsi que la saisie et le calcul automatique des notes et des classements.
 
 L'architecture est scindée en deux parties indépendantes communicant par requêtes HTTP :
-1. **L'API Backend (`/API`)** : Un web service développé avec FastAPI et SQLAlchemy. Elle gère la logique métier, s'interface avec la base de données SQL Server, et gère l'authentification sécurisée via JWT.
+1. **L'API Backend (`/API`)** : Un web service développé avec FastAPI et SQLAlchemy. Elle gère la logique métier, s'interface avec la base de données SQL Server (AWS RDS), et gère l'authentification sécurisée via JWT.
 2. **Le Portail Web Client (`/Projet_BDD2`)** : Une interface utilisateur Server-Side Rendered via Flask et Jinja2. C'est le portail où les différents acteurs (Administrateurs, Professeurs, Étudiants) se connectent pour consulter leurs tableaux de bord.
+
+---
+
+## Aperçu de l'application
+
+| Portail Web (Flask) | API REST (FastAPI / Swagger) |
+|---|---|
+| ![Page de connexion](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_login.png) | ![Swagger UI](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_api.png) |
+
+![Tableau de bord Admin](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_dashboard.png)
+
+---
+
+## Comptes de démonstration
+
+| Rôle | Email | Mot de passe |
+|---|---|---|
+| Administrateur | `admin@ensae.sn` | `admin123` |
+| Enseignant | `prof@ensae.sn` | `prof123` |
+| Étudiant | `etudiant@ensae.sn` | `etu123` |
 
 ---
 
@@ -45,7 +65,8 @@ L'infrastructure de production est distribuée et robuste :
    ```bash
    pip install -r requirements.txt
    ```
-4. Lancez le serveur de développement Uvicorn :
+4. Configurez les variables d'environnement en copiant `.env.example` vers `.env` et en renseignant vos valeurs.
+5. Lancez le serveur de développement Uvicorn :
    ```bash
    uvicorn main:app --reload --host 0.0.0.0 --port 8000
    ```
@@ -60,12 +81,12 @@ L'infrastructure de production est distribuée et robuste :
    ```bash
    pip install flask requests
    ```
-3. Assurez-vous que l'application pointe sur l'API (p. ex. vérifier `config.py` ou `.env`).
+3. Assurez-vous que l'application pointe sur l'API (vérifier `config.py` ou `.env`).
 4. Lancez le serveur Flask :
    ```bash
    python app.py
    ```
-   Le portail est accessible sur `http://localhost:5000`.
+   Le portail est accessible sur `http://localhost:5000/EDE/login`.
 
 ---
 
@@ -73,17 +94,31 @@ L'infrastructure de production est distribuée et robuste :
 
 ### 1. Administrateur
 Responsable du système avec des droits étendus :
-- Gestion des Utilisateurs : Création, suspension et réinitialisation des mots de passe.
-- Gestion Pédagogique : Création des classes, des matières et affectations (Interventions).
-- Statistiques et Tableaux de bord : Vision d'ensemble, taux de réussite, import en masse d'étudiants.
+- Gestion des Utilisateurs : Création, activation/suspension et réinitialisation des mots de passe.
+- Gestion Pédagogique : Création des classes, des matières et affectations (Interventions prof → matière → classe).
+- Statistiques et Tableaux de bord : Vision d'ensemble, taux de réussite global, moyenne générale.
+- Résultats officiels : Sauvegarde et consultation du classement final par classe.
 
 ### 2. Professeur
 Responsable pédagogique et de l'évaluation :
-- Affectations : Visualisation des classes et matières assignées.
-- Gestion des Notes : Saisie individuelle, saisie en masse, édition et suppression des évaluations.
+- Affectations : Visualisation des classes et matières qui lui sont assignées.
+- Gestion des Notes : Saisie individuelle, modification et suppression des évaluations.
+- Classement provisoire : Consultation du classement non-officiel de ses classes.
 
 ### 3. Étudiant
 Utilisateur de la plateforme pour le suivi scolaire :
-- Tableau de Bord : Synthèse des informations académiques.
-- Bulletin Détaillé : Rapport complet avec historique par matière.
-- Rang Officiel : Position de l'étudiant dans le classement de sa classe.
+- Tableau de Bord : Synthèse des informations académiques (moyenne générale pondérée, rang, décision).
+- Bulletin Détaillé : Rapport complet par matière incluant coefficients et classements partiels.
+- Rang Officiel : Position de l'étudiant au sein de sa classe.
+
+---
+
+## Tests
+
+Les tests automatisés de l'API sont situés dans le dossier `tests/`. Ils utilisent une base SQLite en mémoire, sans dépendance à l'infrastructure de production.
+
+```bash
+# Depuis la racine du projet
+pip install -r requirement-test.txt
+pytest tests/ -v
+```
