@@ -1010,8 +1010,12 @@ def admin_classements():
     # Récupérer toutes les matières de la classe pour le filtre
     interventions = api.get_all_interventions(_token())
     matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i['classe_id'] == classe_id}.values()) if classe_id else []
-    if not matiere_id and matieres_classe:
+    
+    matiere_valide = any(m['id'] == matiere_id for m in matieres_classe)
+    if (not matiere_id or not matiere_valide) and matieres_classe:
         matiere_id = matieres_classe[0]['id']
+    elif not matieres_classe:
+        matiere_id = None
 
     # Classement par matière (calculé côté client depuis les notes admin)
     classement_matiere = []
