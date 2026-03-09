@@ -2,8 +2,18 @@
 {% block title %}Saisie des notes{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>✏️ Saisie & gestion des notes</h1></div>
-  <div><a href="/EDE/professeur/notes/batch" class="btn btn-green">⚡ Rapide (Batch)</a></div>
+  <div>
+    <h1>✏️ Saisie & gestion des notes</h1>
+    <div class="ph-sub">Saisie individuelle ou en lot</div>
+  </div>
+  <div>
+    <a href="/EDE/professeur/notes/batch"
+       class="btn btn-primary"
+       style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;box-shadow:0 4px 14px rgba(109,40,217,0.4);font-size:15px;padding:12px 24px;display:flex;align-items:center;gap:8px;">
+      <i class="bi bi-lightning-charge-fill"></i>
+      ⚡ Saisie en Batch (lot)
+    </a>
+  </div>
 </div>
 
 <!-- Sélecteur de classe -->
