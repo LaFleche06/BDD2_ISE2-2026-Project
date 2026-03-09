@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Modifier l'administrateur{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  {'name': 'Tableau de bord', 'url': url_for('admin_dashboard')},
+  {'name': 'Administrateurs', 'url': url_for('admin_administrateurs')},
+  {'name': (admin.prenom or '') + ' ' + (admin.nom or ''), 'url': None}
+]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1><i class="bi bi-person-gear"></i> Modifier un administrateur</h1>
+    <div class="ph-sub">Mise à jour des informations du profil</div>
+  </div>
+  <a href="{{ url_for('admin_administrateurs') }}" class="btn btn-sec">
+    <i class="bi bi-arrow-left"></i> Retour
+  </a>
+</div>
+
+<div class="card" style="max-width:640px;margin:0 auto;">
+  <div class="card-header">
+    <span class="card-title"><i class="bi bi-person-badge"></i> Informations du profil</span>
+  </div>
+  <div style="padding:24px">
+    <form method="POST">
+
+      <div class="form-row" style="gap:16px;margin-bottom:16px;">
+        <div style="flex:1;">
+          <label style="font-weight:600;margin-bottom:6px;display:block;">Nom *</label>
+          <input id="nom" name="nom" type="text" class="form-select"
+                 style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);"
+                 value="{{ admin.nom or '' }}" required>
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:600;margin-bottom:6px;display:block;">Prénom *</label>
+          <input id="prenom" name="prenom" type="text" class="form-select"
+                 style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);"
+                 value="{{ admin.prenom or '' }}" required>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600;margin-bottom:6px;display:block;">Téléphone</label>
+        <input id="telephone" name="telephone" type="tel" class="form-select"
+               style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);"
+               value="{{ admin.telephone or '' }}" placeholder="Optionnel">
+      </div>
+
+      <hr style="border-color:var(--border);margin:20px 0;">
+      <div style="margin-bottom:16px;">
+        <label style="font-weight:600;margin-bottom:6px;display:block;">Email (identifiant)</label>
+        <input type="email" class="form-select"
+               style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--light);color:var(--text-muted);cursor:not-allowed;"
+               value="{{ admin.utilisateur.email if admin.utilisateur else '—' }}" disabled
+               title="L'email ne peut pas être modifié ici. Utilisez la réinitialisation du mot de passe.">
+        <small style="color:var(--text-muted);margin-top:4px;display:block;">
+          <i class="bi bi-info-circle"></i> L'adresse email sert d'identifiant et ne peut pas être modifiée ici.
+        </small>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button type="submit" class="btn btn-primary" style="flex:1;">
+          <i class="bi bi-check2-circle"></i> Enregistrer les modifications
+        </button>
+        <a href="{{ url_for('admin_administrateurs') }}" class="btn btn-sec">
+          Annuler
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

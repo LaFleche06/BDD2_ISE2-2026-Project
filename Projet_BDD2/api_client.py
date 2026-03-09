@@ -329,6 +329,14 @@ def create_administrateur(token: str, payload: dict):
     return _post("/admin/administrateurs", token, payload)
 
 
+def get_administrateur(token: str, admin_id: int):
+    return _get(f"/admin/administrateurs/{admin_id}", token)
+
+
+def update_administrateur(token: str, admin_id: int, payload: dict):
+    return _put(f"/admin/administrateurs/{admin_id}", token, payload)
+
+
 def reset_password(token: str, user_id: int, nouveau_mot_de_passe: str):
     return _put(f"/admin/utilisateurs/{user_id}/reset-password", token,
                 {"nouveau_mot_de_passe": nouveau_mot_de_passe})

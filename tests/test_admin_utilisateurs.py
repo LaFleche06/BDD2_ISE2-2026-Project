@@ -163,6 +163,46 @@ class TestEtudiants:
 
 
 # ─────────────────────────────────────────────
+# ADMINISTRATEURS
+# ─────────────────────────────────────────────
+
+class TestAdministrateurs:
+
+    def test_get_administrateur_par_id(self, client, headers_admin):
+        # Créer d'abord un administrateur
+        r_post = client.post("/admin/administrateurs", json={
+            "nom": "TestAdmin", "prenom": "Jean",
+            "email": "testadmin@test.com", "mot_de_passe": "testpass",
+        }, headers=headers_admin)
+        assert r_post.status_code == 201
+        admin_id = r_post.json()["id"]
+
+        r_get = client.get(f"/admin/administrateurs/{admin_id}", headers=headers_admin)
+        assert r_get.status_code == 200
+        assert r_get.json()["id"] == admin_id
+        assert r_get.json()["nom"] == "TestAdmin"
+
+    def test_modifier_administrateur(self, client, headers_admin):
+        # Créer d'abord un administrateur
+        r_post = client.post("/admin/administrateurs", json={
+            "nom": "OldName", "prenom": "OldPrenom",
+            "email": "modadmin@test.com", "mot_de_passe": "testpass",
+        }, headers=headers_admin)
+        assert r_post.status_code == 201
+        admin_id = r_post.json()["id"]
+
+        # Modifier
+        r_put = client.put(f"/admin/administrateurs/{admin_id}", json={
+            "nom": "NewName", "telephone": "771234567"
+        }, headers=headers_admin)
+        
+        assert r_put.status_code == 200
+        assert r_put.json()["nom"] == "NewName"
+        assert r_put.json()["prenom"] == "OldPrenom" # inchange
+        assert r_put.json()["telephone"] == "771234567"
+
+
+# ─────────────────────────────────────────────
 # PROFESSEURS
 # ─────────────────────────────────────────────
 

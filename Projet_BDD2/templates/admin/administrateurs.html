@@ -50,8 +50,12 @@
             {% endif %}
           </td>
           <td style="text-align:right;">
+            <a href="{{ url_for('admin_administrateur_modifier', admin_id=admin.id) }}" class="btn btn-sec btn-sm" title="Modifier">
+              <i class="bi bi-pencil-square"></i> Modifier
+            </a>
             {% if admin.utilisateur and admin.utilisateur.id != session.entity_id %}
               {% if admin.utilisateur.actif %}
+
                 <form action="{{ url_for('admin_desactiver', user_id=admin.utilisateur.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Désactiver ce compte administrateur ?');">
                   <button type="submit" class="btn btn-sec btn-sm" title="Désactiver le compte">
                     <i class="bi bi-person-x"></i> Désactiver

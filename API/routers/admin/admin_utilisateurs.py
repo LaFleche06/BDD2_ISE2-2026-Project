@@ -92,6 +92,44 @@ def create_administrateur(data: AdministrateurCreate, db: Session = Depends(get_
     return admin
 
 
+@router.get("/administrateurs/{admin_id}", response_model=AdministrateurResponse)
+def get_administrateur(admin_id: int, db: Session = Depends(get_db), _=admin_only):
+    """Retourne le détail d'un administrateur."""
+    admin = db.query(Administrateur).options(
+        joinedload(Administrateur.utilisateur)
+    ).filter(Administrateur.id == admin_id).first()
+    if admin is None:
+        raise HTTPException(status_code=404, detail="Administrateur introuvable")
+    return admin
+
+
+@router.put("/administrateurs/{admin_id}", response_model=AdministrateurResponse)
+def update_administrateur(
+    admin_id: int,
+    data: AdministrateurUpdate,
+    db: Session = Depends(get_db),
+    _=admin_only,
+):
+    """Modifie les informations d'un administrateur (nom, prénom, téléphone)."""
+    admin = db.query(Administrateur).options(
+        joinedload(Administrateur.utilisateur)
+    ).filter(Administrateur.id == admin_id).first()
+    if admin is None:
+        raise HTTPException(status_code=404, detail="Administrateur introuvable")
+
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(admin, field, value)
+
+    try:
+        db.commit()
+        db.refresh(admin)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Erreur lors de la modification")
+
+    return admin
+
+
 # ─────────────────────────────────────────────
 # ACTIVATION / DÉSACTIVATION DES COMPTES
 # ─────────────────────────────────────────────

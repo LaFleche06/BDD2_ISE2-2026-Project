@@ -458,6 +458,39 @@ def admin_administrateur_ajouter():
     return render_template('admin/form_admin.html')
 
 
+@app.route('/EDE/admin/administrateurs/<int:admin_id>/modifier', methods=['GET', 'POST'])
+@login_required('admin')
+def admin_administrateur_modifier(admin_id):
+    """Affiche le formulaire et traite la modification d'un administrateur."""
+    if request.method == 'POST':
+        try:
+            nom = request.form['nom'].strip()
+            prenom = request.form['prenom'].strip()
+            telephone = request.form.get('telephone', '').strip() or None
+
+            r = api.update_administrateur(_token(), admin_id, {
+                "nom": nom,
+                "prenom": prenom,
+                "telephone": telephone,
+            })
+            if r.status_code == 200:
+                flash('Administrateur modifié avec succès.', 'success')
+                return redirect(url_for('admin_administrateurs'))
+            else:
+                detail = r.json().get('detail', r.text) if r.content else r.text
+                flash(f'Erreur : {detail}', 'danger')
+        except Exception as e:
+            flash(f'Erreur technique : {e}', 'danger')
+
+    # GET : charger les infos actuelles
+    admin_data = api.get_administrateur(_token(), admin_id)
+    if not admin_data:
+        flash("Administrateur introuvable ou erreur de chargement.", "danger")
+        return redirect(url_for('admin_administrateurs'))
+
+    return render_template('admin/form_admin_modifier.html', admin=admin_data)
+
+
 
 # -- Étudiants -----------------------------------------------------------------
 @app.route('/EDE/admin/etudiants')
