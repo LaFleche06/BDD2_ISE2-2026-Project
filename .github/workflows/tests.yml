@@ -11,11 +11,11 @@
 name: Tests
 
 on:
-  push:
-    branches: ["**"]     # toutes les branches sans exception
-  pull_request:
-    branches: ["**"]     # aussi sur les PR
-
+  workflow_dispatch:
+  # push:
+  #   branches: ["**"]     # toutes les branches sans exception
+  # pull_request:
+  #   branches: ["**"]     # aussi sur les PR
 jobs:
   test:
     name: Pytest — Python ${{ matrix.python-version }}
