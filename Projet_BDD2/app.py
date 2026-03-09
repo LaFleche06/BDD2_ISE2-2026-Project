@@ -140,11 +140,14 @@ def test_api():
 @app.route('/EDE/etudiant')
 @login_required('etudiant')
 def etudiant_dashboard():
+    import logging
     dash = api.get_dashboard_etudiant(_token())
     if not dash:
-        flash("Impossible de charger le tableau de bord. Veuillez réessayer.", "danger")
-        return redirect(url_for('index'))
-    # Pre-convert string decimal values to float to avoid Jinja filter issues
+        # L'API n'a pas retourné de données — afficher une page d'erreur lisible
+        flash("Impossible de charger le tableau de bord. Vérifiez la connexion à l'API.", "danger")
+        return render_template('etudiant/dashboard.html', dash=None,
+                               total_etudiants=0, rang_reel=None)
+    # Pré-conversion des valeurs décimales string → float
     for n in dash.get('notes', []):
         v = n.get('valeur')
         if v is not None:
@@ -164,11 +167,8 @@ def etudiant_dashboard():
             dash['moyenne_generale'] = float(moy)
         except (ValueError, TypeError):
             dash['moyenne_generale'] = None
-    # The dashboard API already computes rang for the student
     rang_reel = dash.get('rang')
-    # Get total students in class from the prof classement endpoint using etudiant's class
     total_etudiants = dash.get('total_etudiants') or dash.get('nb_etudiants_classe') or 0
-    # If the API doesn't return total, try to count from notes available (fallback: show just rank)
     return render_template('etudiant/dashboard.html', dash=dash,
                            total_etudiants=total_etudiants,
                            rang_reel=rang_reel)
@@ -334,19 +334,25 @@ def prof_moyennes():
     # Classement par matière : notes de la matière sélectionnée, triées par valeur desc
     notes_prof = api.get_mes_notes(_token())
     notes_matiere = [n for n in notes_prof if n['matiere_id'] == matiere_id]
+
+    # Utiliser l'endpoint admin pour avoir les matricules cohérents
     etudiants_classe = api.get_etudiants_admin_by_classe(_token(), classe_id) if classe_id else []
-    etud_by_mat_id = {e['matricule']: e for e in etudiants_classe}
+    # Les notes ont etudiant_id = matricule, on construit un dict matricule → étudiant
+    etud_by_matricule = {e['matricule']: e for e in etudiants_classe}
 
     classement_matiere = []
     for n in notes_matiere:
-        etud = etud_by_mat_id.get(n['etudiant_id']) or {}
+        etud = etud_by_matricule.get(n['etudiant_id'])
+        if not etud:
+            # Fallback : essayer en cherchant dans les notes imbriquées si disponible
+            etud = n.get('etudiant') or {}
         try:
             val = float(n['valeur'])
         except (ValueError, TypeError):
             val = None
         classement_matiere.append({
-            'nom': etud.get('nom', '?'),
-            'prenom': etud.get('prenom', '?'),
+            'nom': etud.get('nom', '?') if isinstance(etud, dict) else '?',
+            'prenom': etud.get('prenom', '?') if isinstance(etud, dict) else '?',
             'matricule': n['etudiant_id'],
             'note': val,
         })
@@ -599,16 +605,23 @@ def admin_prof_detail(pid):
     if not prof:
         flash('Professeur introuvable.', 'danger')
         return redirect(url_for('admin_professeurs'))
-        
+
     interventions = [i for i in api.get_all_interventions(_token()) if i['professeur_id'] == pid]
+    # Utilise l'endpoint admin pour avoir des matricules cohérents avec les notes admin
     notes = api.get_all_notes_admin(_token())
-    
+
     for i in interventions:
-        etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+        # get_etudiants_admin_by_classe filtre depuis /admin/etudiants → matricules cohérents
+        etudiants = api.get_etudiants_admin_by_classe(_token(), i['classe_id'])
         etud_ids = {e['matricule'] for e in etudiants}
-        nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+        nb_notes = sum(
+            1 for n in notes
+            if n['professeur_id'] == pid
+            and n['matiere_id'] == i['matiere_id']
+            and n['etudiant_id'] in etud_ids
+        )
         nb_etudiants = len(etud_ids)
-        
+
         i['nb_etudiants'] = nb_etudiants
         i['nb_notes'] = nb_notes
         i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
@@ -845,8 +858,20 @@ def admin_notes():
     professeurs = api.get_all_professeurs(_token())
     classe_id   = request.args.get('classe_id', type=int)
     matiere_id  = request.args.get('matiere_id', type=int)
+    prof_id     = request.args.get('prof_id', type=int)
     etudiants   = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
     notes       = api.get_all_notes_admin(_token(), classe_id=classe_id, matiere_id=matiere_id)
+
+    # Filtre par professeur côté client (l'API ne supporte pas ce filtre)
+    if prof_id:
+        notes = [n for n in notes if n.get('professeur_id') == prof_id]
+
+    # Pré-conversion des valeurs de notes
+    for n in notes:
+        try:
+            n['valeur'] = float(n['valeur'])
+        except (ValueError, TypeError):
+            n['valeur'] = None
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -862,26 +887,59 @@ def admin_notes():
             )
             flash('Note modifiée.' if r.status_code == 200 else f'Erreur : {r.text}',
                   'success' if r.status_code == 200 else 'danger')
-        return redirect(url_for('admin_notes', classe_id=classe_id, matiere_id=matiere_id))
+        return redirect(url_for('admin_notes', classe_id=classe_id, matiere_id=matiere_id, prof_id=prof_id))
 
     return render_template('admin/notes.html',
                            classes=classes, matieres=matieres, professeurs=professeurs,
-                           etudiants=etudiants, notes=notes, classe_id=classe_id, matiere_id=matiere_id)
+                           etudiants=etudiants, notes=notes,
+                           classe_id=classe_id, matiere_id=matiere_id, prof_id=prof_id)
 
 
 # -- Classements ---------------------------------------------------------------
 @app.route('/EDE/admin/classements')
 @login_required('admin')
 def admin_classements():
-    classes   = api.get_all_classes(_token())
-    classe_id = request.args.get('classe_id', type=int) or (classes[0]['id'] if classes else None)
+    classes    = api.get_all_classes(_token())
+    classe_id  = request.args.get('classe_id', type=int) or (classes[0]['id'] if classes else None)
+    matiere_id = request.args.get('matiere_id', type=int)
     c_data = api.get_classement_classe(_token(), classe_id) if classe_id else []
-    classement = c_data.get('classement', []) if isinstance(c_data, dict) else c_data
+    classement = c_data.get('classement', []) if isinstance(c_data, dict) else (c_data or [])
     stats      = api.get_stats_classe(_token(), classe_id) if classe_id else {}
     resultats  = api.get_resultats_classe(_token(), classe_id) if classe_id else []
+
+    # Récupérer toutes les matières de la classe pour le filtre
+    interventions = api.get_all_interventions(_token())
+    matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i['classe_id'] == classe_id}.values()) if classe_id else []
+    if not matiere_id and matieres_classe:
+        matiere_id = matieres_classe[0]['id']
+
+    # Classement par matière (calculé côté client depuis les notes admin)
+    classement_matiere = []
+    if classe_id and matiere_id:
+        notes_classe = api.get_all_notes_admin(_token(), classe_id=classe_id, matiere_id=matiere_id)
+        etudiants_classe = api.get_etudiants_admin_by_classe(_token(), classe_id)
+        etud_by_id = {e['matricule']: e for e in etudiants_classe}
+        for n in notes_classe:
+            etud = etud_by_id.get(n['etudiant_id']) or n.get('etudiant') or {}
+            try:
+                val = float(n['valeur'])
+            except (ValueError, TypeError):
+                val = None
+            classement_matiere.append({
+                'nom': etud.get('nom', '?'),
+                'prenom': etud.get('prenom', '?'),
+                'matricule': n['etudiant_id'],
+                'note': val,
+            })
+        classement_matiere.sort(key=lambda x: (x['note'] is None, -(x['note'] or 0)))
+        for idx, e in enumerate(classement_matiere):
+            e['rang'] = idx + 1
+
     return render_template('admin/classements.html',
                            classes=classes, classe_id=classe_id,
-                           classement=classement, stats=stats, resultats=resultats)
+                           classement=classement, stats=stats, resultats=resultats,
+                           matieres_classe=matieres_classe, matiere_id=matiere_id,
+                           classement_matiere=classement_matiere)
 
 
 @app.route('/EDE/admin/classements/sauvegarder/<int:classe_id>', methods=['POST'])
@@ -942,6 +1000,88 @@ def admin_interventions():
         i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
 
     return render_template('admin/interventions.html', interventions=interventions)
+
+
+# -- Import en lot -----------------------------------------------------------
+@app.route('/EDE/admin/import-lot/<string:type>', methods=['GET', 'POST'])
+@login_required('admin')
+def admin_import_lot(type):
+    if type not in ('etudiant', 'prof'):
+        return redirect(url_for('admin_dashboard'))
+
+    classes = api.get_all_classes(_token())
+    import json
+    classes_json = json.dumps([{'id': c['id'], 'libelle': c['libelle']} for c in classes])
+    resultats = []
+
+    if request.method == 'POST':
+        rows_raw = {}
+        for key, val in request.form.items():
+            # key format: rows[0][nom], rows[0][email], ...
+            import re
+            m = re.match(r'rows\[(\d+)\]\[(\w+)\]', key)
+            if m:
+                idx, field = m.group(1), m.group(2)
+                if idx not in rows_raw:
+                    rows_raw[idx] = {}
+                rows_raw[idx][field] = val.strip()
+
+        for idx in sorted(rows_raw.keys(), key=int):
+            row = rows_raw[idx]
+            nom    = row.get('nom', '').strip()
+            prenom = row.get('prenom', '').strip()
+            email  = row.get('email', '').strip()
+            mdp    = row.get('mot_de_passe', '').strip()
+            tel    = row.get('telephone', '').strip() or None
+
+            if not nom or not prenom or not email or not mdp:
+                resultats.append({'ok': False, 'nom': nom, 'prenom': prenom, 'email': email,
+                                  'message': 'Champs obligatoires manquants'})
+                continue
+
+            if type == 'etudiant':
+                classe_id = row.get('classe_id', '')
+                if not classe_id:
+                    resultats.append({'ok': False, 'nom': nom, 'prenom': prenom, 'email': email,
+                                      'message': 'Classe manquante'})
+                    continue
+                payload = {'nom': nom, 'prenom': prenom, 'email': email,
+                           'mot_de_passe': mdp, 'telephone': tel,
+                           'classe_id': int(classe_id)}
+                r = api.create_etudiant(_token(), payload)
+            else:
+                payload = {'nom': nom, 'prenom': prenom, 'email': email,
+                           'mot_de_passe': mdp, 'telephone': tel}
+                r = api.create_professeur(_token(), payload)
+
+            if r.status_code in (200, 201):
+                resultats.append({'ok': True, 'nom': nom, 'prenom': prenom, 'email': email,
+                                  'message': ''})
+            else:
+                try:
+                    msg = r.json().get('detail', r.text)
+                except Exception:
+                    msg = r.text
+                resultats.append({'ok': False, 'nom': nom, 'prenom': prenom, 'email': email,
+                                  'message': msg})
+
+        nb_ok = sum(1 for r in resultats if r['ok'])
+        flash(f'{nb_ok}/{len(resultats)} importation(s) réussie(s).', 'success' if nb_ok == len(resultats) else 'warning')
+
+    return render_template('admin/import_lot.html', type=type, classes_json=classes_json, resultats=resultats)
+
+
+@app.route('/EDE/admin/professeurs/import-lot')
+@login_required('admin')
+def admin_profs_import_lot():
+    return redirect(url_for('admin_import_lot', type='prof'))
+
+
+@app.route('/EDE/admin/etudiants/import-lot')
+@login_required('admin')
+def admin_etudiants_import_lot():
+    return redirect(url_for('admin_import_lot', type='etudiant'))
+
 
 @app.route('/EDE/profil/mot_de_passe', methods=['GET', 'POST'])
 def modifier_mot_de_passe():
