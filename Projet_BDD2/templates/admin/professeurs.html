@@ -2,9 +2,46 @@
 {% block title %}Professeurs{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>📚 Professeurs</h1><div class="ph-sub">{{ professeurs|length }} professeurs</div></div>
-  <a href="/EDE/admin/professeurs/ajouter" class="btn btn-primary">+ Ajouter un professeur</a>
+  <div><h1>📚 Professeurs</h1><div class="ph-sub" id="count-label">{{ professeurs|length }} professeurs</div></div>
+  <div style="display:flex;gap:8px">
+    <a href="/EDE/admin/professeurs/ajouter" class="btn btn-primary">+ Ajouter un professeur</a>
+    <a href="/EDE/admin/professeurs/import-lot" class="btn btn-sec">📂 Import en lot</a>
+  </div>
 </div>
+
+<!-- Filtres classe & matière (client-side) -->
+<div class="card" style="padding:14px 20px;margin-bottom:18px">
+  <form style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+    <div style="flex:1;min-width:160px">
+      <label style="margin-bottom:4px;display:block">Filtrer par classe</label>
+      <select id="filter-classe" onchange="filterProfs()" class="form-select">
+        <option value="">— Toutes les classes —</option>
+        {% set classes_vues = [] %}
+        {% for i in interventions %}
+          {% if i.classe.id not in classes_vues %}
+            {{ classes_vues.append(i.classe.id) or '' }}
+            <option value="{{ i.classe.id }}">{{ i.classe.libelle }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <label style="margin-bottom:4px;display:block">Filtrer par matière</label>
+      <select id="filter-matiere" onchange="filterProfs()" class="form-select">
+        <option value="">— Toutes les matières —</option>
+        {% set matieres_vues = [] %}
+        {% for i in interventions %}
+          {% if i.matiere.id not in matieres_vues %}
+            {{ matieres_vues.append(i.matiere.id) or '' }}
+            <option value="{{ i.matiere.id }}">{{ i.matiere.nom }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <button type="button" class="btn btn-sec" onclick="clearFilters()">✕ Réinitialiser</button>
+  </form>
+</div>
+
 <div class="table-wrap">
   <table>
     <thead>
@@ -13,7 +50,11 @@
     <tbody>
     {% for p in professeurs %}
     {% set interv_prof = interventions | selectattr('professeur_id','eq', p.id) | list %}
-    <tr style="cursor:pointer" onclick="window.location='/EDE/admin/professeurs/{{ p.id }}'">
+    <tr class="prof-row"
+        style="cursor:pointer"
+        onclick="window.location='/EDE/admin/professeurs/{{ p.id }}'"
+        data-classe-ids="{{ interv_prof | map(attribute='classe_id') | list | join(',') }}"
+        data-matiere-ids="{{ interv_prof | map(attribute='matiere_id') | list | join(',') }}">
       <td><strong>{{ p.prenom }} {{ p.nom }}</strong></td>
       <td style="font-size:12px;color:#6b7280">{{ p.utilisateur.email if p.utilisateur else '—' }}</td>
       <td style="font-size:12px">{{ p.telephone or '—' }}</td>
@@ -50,4 +91,31 @@
     </tbody>
   </table>
 </div>
+
+<script>
+function filterProfs() {
+  const classeId = document.getElementById('filter-classe').value;
+  const matiereId = document.getElementById('filter-matiere').value;
+  let visible = 0;
+  document.querySelectorAll('.prof-row').forEach(row => {
+    const classeIds = row.dataset.classeIds ? row.dataset.classeIds.split(',') : [];
+    const matiereIds = row.dataset.matiereIds ? row.dataset.matiereIds.split(',') : [];
+    const matchClasse = !classeId || classeIds.includes(classeId);
+    const matchMatiere = !matiereId || matiereIds.includes(matiereId);
+    if (matchClasse && matchMatiere) {
+      row.style.display = '';
+      visible++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  document.getElementById('count-label').textContent = visible + ' professeur(s)';
+}
+
+function clearFilters() {
+  document.getElementById('filter-classe').value = '';
+  document.getElementById('filter-matiere').value = '';
+  filterProfs();
+}
+</script>
 {% endblock %}
