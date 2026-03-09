@@ -12,4 +12,4 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 # ------------------------------------------------------------
 # Flask
 # ------------------------------------------------------------
-SECRET_KEY = os.getenv("SECRET_KEY", "ede-secret-key-2024")
+SECRET_KEY = os.getenv("SECRET_KEY")
