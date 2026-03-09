@@ -164,15 +164,18 @@ def stats_classe(
     if not classe:
         raise HTTPException(status_code=404, detail="Classe introuvable")
 
+    # Nb étudiants réel (indépendant des notes)
+    nb_etudiants = db.query(func.count(Etudiant.matricule)).filter(Etudiant.classe_id == classe_id).scalar() or 0
+
+    # Statistiques calculées uniquement sur les étudiants ayant au moins une note
     result = db.execute(
         text(f"""
             SELECT
-                COUNT(*)                                               AS nb_etudiants,
                 SUM(CASE WHEN CAST(moy AS REAL) >= 10.0 THEN 1 ELSE 0 END) AS nb_admis,
-                SUM(CASE WHEN CAST(moy AS REAL) < 10.0  THEN 1 ELSE 0 END) AS nb_ajournes,
-                ROUND(AVG(CAST(moy AS REAL)), 2)                           AS moyenne_classe,
-                ROUND(MAX(CAST(moy AS REAL)), 2)                           AS meilleure_moyenne,
-                ROUND(MIN(CAST(moy AS REAL)), 2)                           AS moins_bonne_moyenne
+                SUM(CASE WHEN CAST(moy AS REAL) <  10.0 THEN 1 ELSE 0 END) AS nb_ajournes,
+                ROUND(AVG(CAST(moy AS REAL)), 2)                            AS moyenne_classe,
+                ROUND(MAX(CAST(moy AS REAL)), 2)                            AS meilleure_moyenne,
+                ROUND(MIN(CAST(moy AS REAL)), 2)                            AS moins_bonne_moyenne
             FROM (
                 SELECT
                     e.matricule,
@@ -187,27 +190,28 @@ def stats_classe(
         {"classe_id": classe_id},
     ).fetchone()
 
-    nb_etudiants = int(result[0]) if result[0] else 0
-    nb_admis     = int(result[1]) if result[1] else 0
-    nb_ajournes  = int(result[2]) if result[2] else 0
-    moyenne_classe = float(result[3]) if result[3] is not None else None
-    meilleure_moyenne = float(result[4]) if result[4] is not None else None
-    moins_bonne_moyenne = float(result[5]) if result[5] is not None else None
-    
+    nb_admis            = int(result[0]) if result and result[0] else 0
+    nb_ajournes         = int(result[1]) if result and result[1] else 0
+    moyenne_classe      = float(result[2]) if result and result[2] is not None else None
+    meilleure_moyenne   = float(result[3]) if result and result[3] is not None else None
+    moins_bonne_moyenne = float(result[4]) if result and result[4] is not None else None
+
     taux_reussite = round((nb_admis / nb_etudiants) * 100, 1) if nb_etudiants > 0 else 0.0
 
     return {
-        "classe_id":          classe_id,
-        "classe":             classe.libelle,
-        "annee_scolaire":     classe.annee_scolaire,
-        "nb_etudiants":       nb_etudiants,
-        "nb_admis":           nb_admis,
-        "nb_ajournes":        nb_ajournes,
-        "taux_reussite_pct":  taux_reussite,
-        "moyenne_classe":     moyenne_classe,
-        "meilleure_moyenne":  meilleure_moyenne,
+        "classe_id":           classe_id,
+        "classe":              classe.libelle,
+        "annee_scolaire":      classe.annee_scolaire,
+        "nb_etudiants":        nb_etudiants,
+        "nb_admis":            nb_admis,
+        "nb_ajournes":         nb_ajournes,
+        "taux_reussite_pct":   taux_reussite,
+        "moyenne_classe":      moyenne_classe,
+        "meilleure_moyenne":   meilleure_moyenne,
         "moins_bonne_moyenne": moins_bonne_moyenne,
     }
+
+
 # ─────────────────────────────────────────────
 # CLASSEMENT PAR CLASSE
 # ─────────────────────────────────────────────
@@ -225,7 +229,8 @@ def classement_classe(
     if not classe:
         raise HTTPException(status_code=404, detail="Classe introuvable")
 
-    result = db.execute(
+    # Étudiants avec notes (INNER JOIN pour calculer la moyenne)
+    result_avec_notes = db.execute(
         text(f"""
             SELECT
                 e.matricule,
@@ -245,8 +250,21 @@ def classement_classe(
         {"classe_id": classe_id},
     ).fetchall()
 
+    matricules_avec_notes = {row[0] for row in result_avec_notes}
+
+    # Étudiants sans aucune note (pour les afficher en bas du classement)
+    sans_notes = (
+        db.query(Etudiant)
+        .filter(
+            Etudiant.classe_id == classe_id,
+            ~Etudiant.matricule.in_(matricules_avec_notes)
+        )
+        .all()
+    )
+
     classement = []
-    for row in result:
+    rang_offset = len(result_avec_notes)
+    for row in result_avec_notes:
         moyenne = float(row[3]) if row[3] is not None else None
         classement.append({
             "rang":      row[4],
@@ -256,11 +274,21 @@ def classement_classe(
             "moyenne":   moyenne,
             "decision":  "Admis" if moyenne is not None and moyenne >= 10 else "Ajourné",
         })
+    for etud in sans_notes:
+        rang_offset += 1
+        classement.append({
+            "rang":      rang_offset,
+            "matricule": etud.matricule,
+            "nom":       etud.nom,
+            "prenom":    etud.prenom,
+            "moyenne":   None,
+            "decision":  "—",
+        })
 
     return {
-        "classe":        classe.libelle,
+        "classe":         classe.libelle,
         "annee_scolaire": classe.annee_scolaire,
-        "classement":    classement,
+        "classement":     classement,
     }
 
 
@@ -300,10 +328,8 @@ def sauvegarder_classement(
     ).fetchall()
 
     if not result:
-        raise HTTPException(
-            status_code=400,
-            detail="Aucune note trouvée pour cette classe",
-        )
+        # Pas d'erreur — retourner proprement si aucune note n'est saisie
+        return {"message": "Aucune note trouvée pour cette classe — rien à sauvegarder"}
 
     # Supprime les anciens résultats (même classe + même année) avant réinsertion
     db.query(Resultat).filter(
@@ -325,6 +351,7 @@ def sauvegarder_classement(
 
     db.commit()
     return {"message": f"Résultats sauvegardés pour {len(result)} étudiant(s)"}
+
 
 @router.get(
     "/resultats/{classe_id}",
@@ -350,6 +377,7 @@ def resultats_classe(
         .order_by(Resultat.rang)
         .all()
     )
+
 
 # ─────────────────────────────────────────────
 # CONSULTATION GLOBALE DES NOTES
