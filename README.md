@@ -31,16 +31,47 @@ L'architecture est scindée en deux parties indépendantes communicant par requ�
 
 ## Architecture et Déploiement en Production
 
-L'infrastructure de production est distribuée et robuste :
+L'infrastructure de production est distribuée et robuste, reposant sur AWS et des services cloud modernes.
 
-- **Base de données (Amazon RDS)** :
-  La base de données relationnelle (Microsoft SQL Server) est managée par AWS RDS, assurant la haute disponibilité.
-- **Backend API FastAPI (Amazon EC2 + DuckDNS)** :
-  Hébergée sur une instance Amazon EC2, l'API s'interface avec le RDS et est exposée via l'URL :
-  [https://api-ensae-bdd2-ise2-2026.duckdns.org/docs](https://api-ensae-bdd2-ise2-2026.duckdns.org/docs)
-- **Portail Web Flask (Render.com)** :
-  L'application Flask est déployée sur Render. Elle consomme l'API déployée sur EC2. L'accès public se fait depuis :
-  [https://campusensae.onrender.com/EDE/login](https://campusensae.onrender.com/EDE/login)
+### 1. Base de données : Amazon RDS for SQL Server
+Le choix s'est porté sur **Amazon RDS (Relational Database Service)** for SQL Server (édition Express, Free Tier) au lieu d'une instance EC2 classique (IaaS). 
+RDS étant un service PaaS, AWS prend en charge l'installation du moteur, les sauvegardes automatisées, les mises à jour et la surveillance. Cette solution supprime la charge d'administration système.
+
+**Configuration de l'instance RDS :**
+- Moteur : Microsoft SQL Server Express Edition.
+- Instance : .
+- Stockage : 20 Gio SSD, mise à l'échelle automatique désactivée pour maîtriser les coûts.
+- Accès public activé pour permettre les connexions depuis l'API.
+- Sécurité : Le port  (SQL Server) est ouvert au niveau du groupe de sécurité. La sécurité repose sur l'authentification forte interne au moteur SQL Server.
+
+**Migration des données depuis l'environnement local vers RDS :**
+La base a été migrée via un **Script SQL complet (Schema and data)** généré par *SQL Server Management Studio (SSMS)*. Cette méthode a été privilégiée pour sa simplicité par rapport à AWS DMS.
+Le script  contenant la définition complète (tables, vues , procédures stockées, données) a été exécuté directement sur la connexion RDS depuis SSMS, reconstituant ainsi la base de données à l'identique sur le cloud AWS.
+
+### 2. Backend API : FastAPI sur Amazon EC2
+L'application web ne se connecte pas directement à la base de données. Une couche **API REST** intermédiaire développée avec **FastAPI** a été introduite.
+L'API sert de point d'entrée unique, s'assure des calculs complexes et met en place des mesures de sécurité comme l'authentification JWT (JSON Web Token). FastAPI génère également une documentation interactive (Swagger) automatiquement via OpenAPI sur la route .
+
+**Hébergement et Déploiement sur AWS EC2 avec Nginx et Systemd :**
+L'API HTTP est hébergée sur une instance **Amazon EC2** avec la configuration de production suivante :
+- **Serveur d'application :**  exécuté depuis un environnement virtuel Python ().
+- **Supervision (Systemd) :** L'API tourne en tant que service d'arrière-plan  (). Cette supervision assure que le serveur FastAPI démarre automatiquement avec la machine et est relancé en cas de défaillance imprévue.
+- **Reverse Proxy (Nginx) :** Nginx réceptionne les requêtes externes sur les ports 80 (HTTP) et 443 (HTTPS) pour les rediriger vers le processus local  fonctionnant sur le port 8000 ().
+- **Sécurité SSL/TLS (Let's Encrypt) :** La communication est sécurisée de bout en bout en HTTPS. Le certificat SSL a été généré via **Certbot** pour le nom de domaine dynamique .
+
+Cette infrastructure garantit un déploiement \”production-ready\”. La publication d'une mise à jour de l'API se résume à une commande Already up to date. suivie de .
+
+### 3. Portail Web Client : Flask sur Render.com
+Le front-end, développé en **Flask**, tourne de manière server-side-rendered. Il est déployé sur **Render.com**, une plateforme SaaS reconnue.
+- **Intégration continue :** Le déploiement s'y effectue par connexion native au dépôt GitHub (webhook sur la branche ).
+- **Sécurité :** Les identifiants, JWT Secret et les URL (endpoints) de l'API EC2 sont uniquement renseignés dans le gestionnaire de variables d'environnement de Render.com. Ils ne sont jamais poussés sur Git.
+- L'URL publique de l'application est : [https://campusensae.onrender.com/EDE/login](https://campusensae.onrender.com/EDE/login)
+
+### 4. Organisation du travail (Git et GitHub)
+Le projet applique des bonnes pratiques de versions avec Git pour un travail d'équipe fluide :
+- **Branches de développement :** La branche  centralise le code prêt pour la production. Chaque nouvelle implémentation est élaborée dans une branche de type  puis mergée.
+- **Masquage des secrets :** Les données sensibles sont confinées dans le fichier  sur chaque poste (renseigné dans le ), avec pour seule référence un fichier structure vide .
+
 
 ---
 
