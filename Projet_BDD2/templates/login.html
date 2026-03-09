@@ -74,7 +74,10 @@
 .login-card{
   position:relative;z-index:2;
   width:100%;max-width:440px;
-  background:rgba(255,255,255,.97);
+  background:rgba(255,255,255,.85);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border: 1px solid rgba(255,255,255,0.6);
   border-radius:24px;
   padding:40px 38px 36px;
   box-shadow:
@@ -293,7 +296,7 @@
         class="lc-logo-img"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
       >
-      <div class="lc-logo-fallback" style="display:none;">📊</div>
+      <div class="lc-logo-fallback" style="display:none;"><i class="bi bi-bar-chart-fill"></i></div>
       <div class="lc-school">EN<span>SAE</span></div>
       <div class="lc-tagline">Application de Gestion des Étudiants</div>
     </div>
@@ -352,7 +355,7 @@
         Comptes de démonstration
       </div>
       <div class="lc-account-row">
-        <span class="lc-role">⚙️ Admin</span>
+        <span class="lc-role"><i class="bi bi-gear-fill"></i> Admin</span>
         <span class="lc-cred">admin@ensae.sn / admin123</span>
       </div>
       <div class="lc-account-row">
@@ -360,7 +363,7 @@
         <span class="lc-cred">prof@ensae.sn / prof123</span>
       </div>
       <div class="lc-account-row">
-        <span class="lc-role">🎓 Étudiant</span>
+        <span class="lc-role"><i class="bi bi-mortarboard-fill"></i> Étudiant</span>
         <span class="lc-cred">etudiant@ensae.sn / etu123</span>
       </div>
     </div>
