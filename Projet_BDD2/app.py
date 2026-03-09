@@ -325,21 +325,26 @@ def prof_moyennes():
 
     # Matières pour la classe sélectionnée
     matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i['classe_id'] == classe_id}.values())
-    if not matiere_id and matieres_classe:
+    
+    # Vérifier si la matière choisie appartient bien à la classe sélectionnée
+    matiere_valide = any(m['id'] == matiere_id for m in matieres_classe)
+    if (not matiere_id or not matiere_valide) and matieres_classe:
         matiere_id = matieres_classe[0]['id']
 
     # Classement général de la classe (toutes matières)
     c_data = api.get_classement_prof(_token(), classe_id) if classe_id else []
     classement_general = c_data.get('classement', []) if isinstance(c_data, dict) else (c_data or [])
 
-    # Classement par matière : notes de la matière sélectionnée, triées par valeur desc
-    notes_prof = api.get_mes_notes(_token())
-    notes_matiere = [n for n in notes_prof if n['matiere_id'] == matiere_id]
-
     # Utiliser l'endpoint professeur pour avoir les matricules cohérents
     etudiants_classe = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
-    # Les notes ont etudiant_id = matricule, on construit un dict matricule → étudiant
     etud_by_matricule = {str(e['matricule']): e for e in etudiants_classe}
+    etud_ids_classe = set(etud_by_matricule.keys())
+
+    # Classement par matière : notes de la matière sélectionnée, filtrées par classe
+    notes_prof = api.get_mes_notes(_token())
+    notes_matiere = [n for n in notes_prof
+                     if str(n['matiere_id']) == str(matiere_id)
+                     and str(n['etudiant_id']) in etud_ids_classe]
 
     classement_matiere = []
     for n in notes_matiere:
@@ -410,7 +415,7 @@ def admin_dashboard():
              alerts.append({"type": "warning", "msg": f"La classe {c['libelle']} n'a aucune intervention."})
              
         for i in c_intervs:
-            etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+            etudiants = api.get_etudiants_admin_by_classe(_token(), i['classe_id'])
             etud_ids = {e['matricule'] for e in etudiants}
             nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
             nb_etudiants = len(etud_ids)
@@ -551,6 +556,36 @@ def admin_etudiant_detail(matricule):
                            matieres_classe=matieres_classe)
 
 
+@app.route('/EDE/admin/etudiants/<int:matricule>/modifier-note', methods=['POST'])
+@login_required('admin')
+def admin_etudiant_modifier_note(matricule):
+    """Modifie une note depuis la page détail étudiant et redirige vers cette même page."""
+    note_id = request.form.get('note_id', type=int)
+    valeur  = request.form.get('valeur_note')
+    r = api.modifier_note(_token(), note_id, valeur)
+    flash('Note modifiée.' if r.status_code == 200 else f'Erreur : {r.text}',
+          'success' if r.status_code == 200 else 'danger')
+    return redirect(url_for('admin_etudiant_detail', matricule=matricule))
+
+
+@app.route('/EDE/admin/etudiants/<int:matricule>/ajouter-note', methods=['POST'])
+@login_required('admin')
+def admin_etudiant_ajouter_note(matricule):
+    """Ajoute une note depuis la page détail étudiant."""
+    matiere_id = request.form.get('matiere_id', type=int)
+    valeur  = request.form.get('valeur_note')
+    r = api.admin_saisir_note(_token(), matricule, matiere_id, valeur)
+    if r.status_code == 201:
+        flash('Note ajoutée.', 'success')
+    else:
+        try:
+            detail = r.json().get('detail', r.text)
+        except Exception:
+            detail = r.text
+        flash(f'Erreur : {detail}', 'danger')
+    return redirect(url_for('admin_etudiant_detail', matricule=matricule))
+
+
 @app.route('/EDE/admin/etudiants/supprimer/<int:matricule>', methods=['POST'])
 @login_required('admin')
 def admin_etudiant_supprimer(matricule):
@@ -590,8 +625,11 @@ def admin_prof_ajouter():
                 # Interventions
                 for m in request.form.getlist('matieres'):
                     for c in request.form.getlist('classes'):
-                        api.create_intervention(_token(), pid, int(m), int(c))
-                flash('Professeur ajouté et affecté.', 'success')
+                        req = api.create_intervention(_token(), pid, int(m), int(c))
+                        if req.status_code != 201:
+                            detail = req.json().get('detail', req.text) if req.content else req.text
+                            flash(f'Affectation ignorée : {detail}', 'warning')
+                flash('Professeur ajouté.', 'success')
                 return redirect(url_for('admin_professeurs'))
             detail = r.json().get('detail', r.text) if r.content else r.text
             flash(f'Erreur : {detail}', 'danger')
@@ -659,8 +697,14 @@ def admin_prof_modifier(pid):
 @login_required('admin')
 def admin_prof_supprimer(pid):
     r = api.delete_professeur(_token(), pid)
-    flash('Professeur supprimé.' if r.status_code == 204 else f'Erreur : {r.text}',
-          'success' if r.status_code == 204 else 'danger')
+    if r.status_code == 204:
+        flash('Professeur supprimé.', 'success')
+    else:
+        try:
+            detail = r.json().get('detail', r.text)
+        except Exception:
+            detail = r.text
+        flash(f'Erreur lors de la suppression du professeur : {detail}', 'danger')
     return redirect(url_for('admin_professeurs'))
 
 
@@ -669,16 +713,24 @@ def admin_prof_supprimer(pid):
 def admin_affecter(pid):
     mid = request.form.get('matiere_id', type=int)
     cid = request.form.get('classe_id', type=int)
-    api.create_intervention(_token(), pid, mid, cid)
-    flash('Affectation ajoutée.', 'success')
+    req = api.create_intervention(_token(), pid, mid, cid)
+    if req.status_code == 201:
+        flash('Affectation ajoutée.', 'success')
+    else:
+        detail = req.json().get('detail', req.text) if req.content else req.text
+        flash(f'Erreur affectation : {detail}', 'danger')
     return redirect(url_for('admin_prof_modifier', pid=pid))
 
 
 @app.route('/EDE/admin/professeurs/retirer/<int:pid>/<int:mid>/<int:cid>', methods=['POST'])
 @login_required('admin')
 def admin_retirer_affectation(pid, mid, cid):
-    api.delete_intervention(_token(), pid, mid, cid)
-    flash('Affectation retirée.', 'success')
+    req = api.delete_intervention(_token(), pid, mid, cid)
+    if req.status_code == 204:
+        flash('Affectation retirée.', 'success')
+    else:
+        detail = req.json().get('detail', req.text) if req.content else req.text
+        flash(f'Erreur suppression affectation : {detail}', 'danger')
     return redirect(url_for('admin_prof_modifier', pid=pid))
 
 
@@ -860,7 +912,7 @@ def admin_notes():
     classe_id   = request.args.get('classe_id', type=int)
     matiere_id  = request.args.get('matiere_id', type=int)
     prof_id     = request.args.get('prof_id', type=int)
-    etudiants   = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
+    etudiants   = api.get_etudiants_admin_by_classe(_token(), classe_id) if classe_id else []
     notes       = api.get_all_notes_admin(_token(), classe_id=classe_id, matiere_id=matiere_id)
 
     # Filtre par professeur côté client (l'API ne supporte pas ce filtre)
@@ -991,7 +1043,7 @@ def admin_interventions():
     notes = api.get_all_notes_admin(_token())
     
     for i in interventions:
-        etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+        etudiants = api.get_etudiants_admin_by_classe(_token(), i['classe_id'])
         nb_etudiants = len(etudiants)
         etud_ids = {e['matricule'] for e in etudiants}
         nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)

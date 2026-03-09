@@ -37,23 +37,20 @@
     <input type="hidden" name="action" value="ajouter">
     <div class="form-row3">
       <div class="form-group">
-        <label>Étudiant</label>
-        <select name="etudiant_id" required>
-          <option value="">— Choisir —</option>
-          {% for e in etudiants %}
-          <option value="{{ e.matricule }}">{{ e.prenom }} {{ e.nom }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group">
         <label>Matière</label>
-        <select name="matiere_id" required>
+        <select name="matiere_id" id="selectMatiere" required onchange="updateEtudiantsDropdown()">
           <option value="">— Choisir —</option>
           {% for m in matieres %}
           {% if interventions | selectattr('matiere_id','eq',m.id) | selectattr('classe_id','eq',classe_id) | list %}
           <option value="{{ m.id }}">{{ m.nom }}</option>
           {% endif %}
           {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Étudiant</label>
+        <select name="etudiant_id" id="selectEtudiant" required>
+          <option value="">— Choisissez une matière —</option>
         </select>
       </div>
       <div class="form-group">
@@ -89,7 +86,7 @@
         <td><span class="{{ note_color(n.valeur) }}">{{ n.valeur }}/20</span></td>
         <td style="font-size:11px;color:#9ca3af">{{ (n.date_saisie or '')[:10] }}</td>
         <td style="white-space:nowrap">
-          <button class="btn btn-sec btn-xs" onclick="document.getElementById('mod-{{ n.id }}').classList.add('open')"><i class="bi bi-pencil-square"></i></button>
+          <button class="btn btn-sec btn-xs" onclick="openEditNote({{ n.id }}, '{{ n.valeur }}', '{{ n.matiere.nom if n.matiere else n.matiere_id }}')"><i class="bi bi-pencil-square"></i></button>
           <form method="post" style="display:inline" onsubmit="return confirm('Supprimer ?')">
             <input type="hidden" name="action" value="supprimer">
             <input type="hidden" name="note_id" value="{{ n.id }}">
@@ -97,22 +94,6 @@
           </form>
         </td>
       </tr>
-      <!-- Modal modifier -->
-      <div class="modal-bg" id="mod-{{ n.id }}">
-        <div class="modal">
-          <button class="modal-close" onclick="document.getElementById('mod-{{ n.id }}').classList.remove('open')">×</button>
-          <div class="modal-title"><i class="bi bi-pencil-square"></i> Modifier la note</div>
-          <form method="post" action="/EDE/professeur/notes?classe_id={{ classe_id }}">
-            <input type="hidden" name="action" value="modifier">
-            <input type="hidden" name="note_id" value="{{ n.id }}">
-            <div class="form-group">
-              <label>Nouvelle valeur (/20)</label>
-              <input name="valeur_note" type="number" step="0.25" min="0" max="20" value="{{ n.valeur }}" required>
-            </div>
-            <button class="btn btn-primary"><i class="bi bi-pencil-square"></i> Enregistrer</button>
-          </form>
-        </div>
-      </div>
       {% else %}
       <tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px">Aucune note saisie pour cette classe.</td></tr>
       {% endfor %}
@@ -120,4 +101,93 @@
     </table>
   </div>
 </div>
+
+<!-- Modal unique pour modifier une note -->
+<div class="modal-bg" id="modalEditNote">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEditNote()">×</button>
+    <div class="modal-title"><i class="bi bi-pencil-square"></i> Modifier la note</div>
+    <p id="editNoteInfo" style="margin-bottom:12px;font-size:14px;background:var(--bg-hover);padding:10px;border-radius:6px;"></p>
+    <form method="post" action="/EDE/professeur/notes?classe_id={{ classe_id }}">
+      <input type="hidden" name="action" value="modifier">
+      <input type="hidden" name="note_id" id="editNoteId">
+      <div class="form-group">
+        <label>Nouvelle valeur (/20)</label>
+        <input name="valeur_note" id="editNoteValeur" type="number" step="0.25" min="0" max="20" required>
+      </div>
+      <button class="btn btn-primary"><i class="bi bi-pencil-square"></i> Enregistrer</button>
+    </form>
+  </div>
+</div>
+
+<script>
+    // Data injected from backend
+    const notesData = [
+        {% for n in notes %}
+        { etudiant_id: {{ n.etudiant_id }}, matiere_id: {{ n.matiere_id }} },
+        {% endfor %}
+    ];
+    
+    const etudiantsData = [
+        {% for e in etudiants %}
+        { id: {{ e.matricule }}, text: {{ (e.prenom ~ ' ' ~ e.nom)|tojson }} },
+        {% endfor %}
+    ];
+
+    function updateEtudiantsDropdown() {
+        const selectMatiere = document.getElementById('selectMatiere');
+        const selectEtudiant = document.getElementById('selectEtudiant');
+        const matiereId = selectMatiere.value;
+        const currentEtuId = selectEtudiant.value;
+
+        // Clear existing options
+        selectEtudiant.innerHTML = '<option value="">— Choisir un étudiant —</option>';
+
+        if (!matiereId) {
+            selectEtudiant.innerHTML = '<option value="">— Choisissez d\'abord une matière —</option>';
+            return;
+        }
+
+        // Find students who ALREADY have a note for this matiere
+        const haveNoteIds = new Set(
+            notesData.filter(n => n.matiere_id == matiereId).map(n => n.etudiant_id)
+        );
+
+        // Add students who DO NOT have a note
+        let added = 0;
+        etudiantsData.forEach(e => {
+            if (!haveNoteIds.has(e.id)) {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = e.text;
+                selectEtudiant.appendChild(opt);
+                added++;
+            }
+        });
+        
+        if (added === 0) {
+            selectEtudiant.innerHTML = '<option value="">— Tous évalués —</option>';
+        }
+
+        // Restore selection if still valid
+        if (currentEtuId && !haveNoteIds.has(parseInt(currentEtuId))) {
+            selectEtudiant.value = currentEtuId;
+        }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+        updateEtudiantsDropdown();
+    });
+
+function openEditNote(id, valeur, matiere) {
+    document.getElementById('editNoteId').value = id;
+    document.getElementById('editNoteValeur').value = valeur;
+    document.getElementById('editNoteInfo').innerHTML = '<strong>Matière :</strong> ' + matiere;
+    document.getElementById('modalEditNote').classList.add('open');
+}
+function closeEditNote() {
+    document.getElementById('modalEditNote').classList.remove('open');
+}
+</script>
 {% endblock %}

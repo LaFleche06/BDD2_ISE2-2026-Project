@@ -174,6 +174,49 @@ def notes_etudiant(matricule: int, db: Session = Depends(get_db), _=admin_only):
     return db.query(Note).filter(Note.etudiant_id == matricule).all()
 
 
+@router.post("/etudiants/{matricule}/notes", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
+def admin_ajouter_note(
+    matricule: int,
+    data: NoteCreate,
+    db: Session = Depends(get_db),
+    _=admin_only,
+):
+    """Saisit une note pour un étudiant (par l'administrateur)."""
+    from datetime import datetime, timezone
+    
+    etudiant = db.query(Etudiant).filter(Etudiant.matricule == matricule).first()
+    if not etudiant:
+        raise HTTPException(status_code=404, detail="Étudiant introuvable")
+
+    # Chercher le professeur en charge de cette matière dans la classe
+    intervention = db.query(Intervention).filter(
+        Intervention.matiere_id == data.matiere_id,
+        Intervention.classe_id == etudiant.classe_id
+    ).first()
+    if not intervention:
+        raise HTTPException(status_code=400, detail="Aucun professeur n'enseigne cette matière dans cette classe.")
+
+    # Vérifier si l'étudiant a déjà une note
+    existing = db.query(Note).filter(
+        Note.etudiant_id == matricule,
+        Note.matiere_id == data.matiere_id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="L'étudiant a déjà une note dans cette matière.")
+
+    note = Note(
+        matiere_id=data.matiere_id,
+        professeur_id=intervention.professeur_id,
+        etudiant_id=matricule,
+        valeur=data.valeur,
+        date_saisie=data.date_saisie or datetime.now(timezone.utc),
+    )
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
 @router.post("/etudiants", response_model=EtudiantResponse, status_code=status.HTTP_201_CREATED)
 def create_etudiant(data: EtudiantCreate, db: Session = Depends(get_db), _=admin_only):
     """Crée un étudiant et son compte utilisateur associé."""
@@ -335,6 +378,11 @@ def delete_professeur(prof_id: int, db: Session = Depends(get_db), _=admin_only)
 
     try:
         utilisateur_id = prof.utilisateur_id
+        # Supprimer d'abord les notes liées au professeur
+        db.query(Note).filter(Note.professeur_id == prof_id).delete(synchronize_session=False)
+        # Supprimer les interventions (clé composite incluant professeur_id)
+        db.query(Intervention).filter(Intervention.professeur_id == prof_id).delete(synchronize_session=False)
+        db.flush()
         db.delete(prof)
         db.flush()
         utilisateur = db.query(Utilisateur).filter(Utilisateur.id == utilisateur_id).first()
@@ -360,12 +408,11 @@ def list_interventions(db: Session = Depends(get_db), _=admin_only):
 def create_intervention(data: InterventionCreate, db: Session = Depends(get_db), _=admin_only):
     """Crée une affectation professeur → matière → classe."""
     existing = db.query(Intervention).filter(
-        Intervention.professeur_id == data.professeur_id,
         Intervention.matiere_id    == data.matiere_id,
         Intervention.classe_id     == data.classe_id,
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Cette affectation existe déjà")
+        raise HTTPException(status_code=400, detail="Une affectation existe déjà pour cette matière et cette classe")
 
     try:
         intervention = Intervention(**data.model_dump())

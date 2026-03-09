@@ -59,7 +59,8 @@
       <tbody>
         {% for n in notes %}
         <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ n.etudiant.matricule }}'">
-          <td><strong>{{ n.etudiant.prenom }} {{ n.etudiant.nom }}</strong><br><span style="font-size:11px;color:var(--text-muted)">{{ n.etudiant.classe.libelle if n.etudiant.classe else '' }}</span></td>
+          <td><strong>{{ n.etudiant.prenom }} {{ n.etudiant.nom }}</strong></td>
+          <td><span class="badge b-blue">{{ n.etudiant.classe.libelle if n.etudiant.classe else '' }}</span></td>
           <td>
             {% if n.valeur is not none %}
             <span class="{{ note_color(n.valeur) }}">{{ "%.2f"|format(n.valeur) }}/20</span>

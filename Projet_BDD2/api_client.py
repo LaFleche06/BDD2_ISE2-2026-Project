@@ -268,6 +268,14 @@ def get_all_notes_admin(token: str, classe_id: int = None, matiere_id: int = Non
     return _get("/admin/notes", token, params=params) or []
 
 
+def admin_saisir_note(token: str, etudiant_id: int, matiere_id: int, valeur):
+    return _post(f"/admin/etudiants/{etudiant_id}/notes", token, {
+        "etudiant_id": etudiant_id,
+        "matiere_id": matiere_id,
+        "valeur": valeur,
+    })
+
+
 # ---------------------------------------------------------------------------
 # CLASSEMENTS & STATISTIQUES
 # ---------------------------------------------------------------------------
