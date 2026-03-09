@@ -524,36 +524,41 @@ def admin_etudiant_modifier(matricule):
 @app.route('/EDE/admin/etudiants/<int:matricule>')
 @login_required('admin')
 def admin_etudiant_detail(matricule):
-    etudiant = api.get_etudiant(_token(), matricule)
-    if not etudiant:
-        flash('Étudiant introuvable.', 'danger')
+    try:
+        etudiant = api.get_etudiant(_token(), matricule)
+        if not etudiant:
+            flash('Étudiant introuvable.', 'danger')
+            return redirect(url_for('admin_etudiants'))
+        
+        notes = api.get_notes_etudiant_admin(_token(), matricule) or []
+        # Pre-convert string decimals to float
+        for n in notes:
+            try:
+                n['valeur'] = float(n['valeur'])
+            except (ValueError, TypeError, KeyError):
+                n['valeur'] = None
+            # Also fix coefficient in nested matiere
+            mat = n.get('matiere') or {}
+            try:
+                mat['coefficient'] = float(mat.get('coefficient', 1))
+            except (ValueError, TypeError):
+                pass
+        
+        # Get all subjects for student's class to show missing grades
+        interventions = api.get_all_interventions(_token()) or []
+        classe_id = etudiant.get('classe_id')
+        if classe_id:
+            matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i.get('classe_id') == classe_id}.values())
+        else:
+            matieres_classe = []
+        
+        return render_template('admin/etudiant_detail.html', 
+                               etudiant=etudiant, 
+                               notes=notes,
+                               matieres_classe=matieres_classe)
+    except Exception as e:
+        flash(f'Erreur lors du chargement du dossier étudiant : {e}', 'danger')
         return redirect(url_for('admin_etudiants'))
-    
-    notes = api.get_notes_etudiant_admin(_token(), matricule)
-    # Pre-convert string decimals to float
-    for n in notes:
-        try:
-            n['valeur'] = float(n['valeur'])
-        except (ValueError, TypeError, KeyError):
-            n['valeur'] = None
-        # Also fix coefficient in nested matiere
-        mat = n.get('matiere') or {}
-        try:
-            mat['coefficient'] = float(mat.get('coefficient', 1))
-        except (ValueError, TypeError):
-            pass
-    # Get all subjects for student's class to show missing grades
-    interventions = api.get_all_interventions(_token())
-    classe_id = etudiant.get('classe_id')
-    if classe_id:
-        matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i.get('classe_id') == classe_id}.values())
-    else:
-        matieres_classe = []
-    
-    return render_template('admin/etudiant_detail.html', 
-                           etudiant=etudiant, 
-                           notes=notes,
-                           matieres_classe=matieres_classe)
 
 
 @app.route('/EDE/admin/etudiants/<int:matricule>/modifier-note', methods=['POST'])
