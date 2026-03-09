@@ -524,13 +524,16 @@ def admin_etudiant_modifier(matricule):
 @app.route('/EDE/admin/etudiants/<int:matricule>')
 @login_required('admin')
 def admin_etudiant_detail(matricule):
+    print(f"DEBUG: Entering admin_etudiant_detail for {matricule}")
     try:
         etudiant = api.get_etudiant(_token(), matricule)
+        print(f"DEBUG: Found etudiant: {bool(etudiant)}")
         if not etudiant:
             flash('Étudiant introuvable.', 'danger')
             return redirect(url_for('admin_etudiants'))
         
         notes = api.get_notes_etudiant_admin(_token(), matricule) or []
+        print(f"DEBUG: Found {len(notes)} notes")
         # Pre-convert string decimals to float
         for n in notes:
             try:
@@ -546,17 +549,23 @@ def admin_etudiant_detail(matricule):
         
         # Get all subjects for student's class to show missing grades
         interventions = api.get_all_interventions(_token()) or []
+        print(f"DEBUG: Found {len(interventions)} total interventions")
         classe_id = etudiant.get('classe_id')
         if classe_id:
             matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i.get('classe_id') == classe_id}.values())
         else:
             matieres_classe = []
+        print(f"DEBUG: Matieres in class: {len(matieres_classe)}")
         
-        return render_template('admin/etudiant_detail.html', 
+        print("DEBUG: Calling render_template")
+        res = render_template('admin/etudiant_detail.html', 
                                etudiant=etudiant, 
                                notes=notes,
                                matieres_classe=matieres_classe)
+        print("DEBUG: render_template finished successfully")
+        return res
     except Exception as e:
+        print(f"DEBUG: ERROR CAUGHT: {e}")
         flash(f'Erreur lors du chargement du dossier étudiant : {e}', 'danger')
         return redirect(url_for('admin_etudiants'))
 
