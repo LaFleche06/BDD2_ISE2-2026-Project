@@ -13,15 +13,27 @@
 
 <!-- Sélecteur de classe -->
 <div class="card" style="padding:14px 20px;margin-bottom:18px">
-  <form method="get" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+  <form method="get" style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
     <div style="flex:1;min-width:180px">
-      <label style="margin-bottom:4px">Classe</label>
-      <select name="classe_id" onchange="this.form.submit()">
+      <label style="margin-bottom:4px;display:block">Classe</label>
+      <select name="classe_id" onchange="this.form.submit()" class="form-select">
         {% for c in classes %}
         <option value="{{ c.id }}" {{ 'selected' if classe_id == c.id }}>{{ c.libelle }}</option>
         {% endfor %}
       </select>
     </div>
+    {% if matieres_classe %}
+    <div style="flex:1;min-width:180px">
+      <label style="margin-bottom:4px;display:block">Matière (classement par note)</label>
+      <select name="matiere_id" onchange="this.form.submit()" class="form-select">
+        {% for m in matieres_classe %}
+        <option value="{{ m.id }}" {{ 'selected' if matiere_id == m.id }}>{{ m.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <!-- Conserver la classe sélectionnée -->
+    {% if classe_id %}<input type="hidden" name="classe_id" value="{{ classe_id }}">{% endif %}
   </form>
 </div>
 
@@ -30,48 +42,102 @@
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
   <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants or 0 }}</div><div class="stat-lbl">Étudiants</div></div>
   <div class="stat-card g"><div class="stat-val">{{ stats.moyenne_classe or '—' }}</div><div class="stat-lbl">Moy. classe</div></div>
-  <div class="stat-card r"><div class="stat-val">{{ stats.note_min or '—' }}</div><div class="stat-lbl">Note min</div></div>
-  <div class="stat-card"><div class="stat-val">{{ stats.note_max or '—' }}</div><div class="stat-lbl">Note max</div></div>
+  <div class="stat-card r">
+    <div class="stat-val">{% if stats.note_min is not none and stats.note_min != '' %}{{ stats.note_min }}{% else %}—{% endif %}</div>
+    <div class="stat-lbl">Note min</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val">{% if stats.note_max is not none and stats.note_max != '' %}{{ stats.note_max }}{% else %}—{% endif %}</div>
+    <div class="stat-lbl">Note max</div>
+  </div>
   <div class="stat-card g"><div class="stat-val">{{ stats.nb_admis or 0 }}</div><div class="stat-lbl">Admis</div></div>
   <div class="stat-card r"><div class="stat-val">{{ stats.nb_ajournes or 0 }}</div><div class="stat-lbl">Ajournés</div></div>
 </div>
 
-<!-- Classement en direct -->
-<div class="card">
-  <div class="card-header">
-    <span class="card-title">📊 Classement en direct</span>
-    <form action="/EDE/admin/classements/sauvegarder/{{ classe_id }}" method="post" style="display:inline">
-      <button class="btn btn-green btn-sm" type="submit"
-              onclick="return confirm('Sauvegarder les résultats officiels pour cette classe ?')">
-        💾 Sauvegarder les résultats
-      </button>
-    </form>
+<div class="form-row">
+  <!-- Classement général en direct -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📊 Classement général — en direct</span>
+      <form action="/EDE/admin/classements/sauvegarder/{{ classe_id }}" method="post" style="display:inline">
+        <button class="btn btn-green btn-sm" type="submit"
+                onclick="return confirm('Sauvegarder les résultats officiels pour cette classe ?')">
+          💾 Sauvegarder les résultats
+        </button>
+      </form>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rang</th><th>Étudiant</th><th>Moyenne</th><th>Décision</th></tr></thead>
+        <tbody>
+        {% for r in classement %}
+        <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ r.matricule }}'">
+          <td>
+            {% if r.rang == 1 %}<span class="rang-1">🥇 1er</span>
+            {% elif r.rang == 2 %}<span class="rang-2">🥈 2ème</span>
+            {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
+            {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
+          </td>
+          <td><strong style="color:var(--primary)">{{ r.prenom }} {{ r.nom }}</strong></td>
+          <td><span class="{{ note_color(r.moyenne) }}">{{ "%.2f"|format(r.moyenne|float) if r.moyenne is not none else '—' }}/20</span></td>
+          <td>
+            {% set dec = r.decision or '' %}
+            <span class="badge {% if 'Admis' in dec %}b-green{% else %}b-red{% endif %}">{{ dec or '—' }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px">Aucune donnée de classement.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Rang</th><th>Étudiant</th><th>Moyenne</th><th>Décision</th></tr></thead>
-      <tbody>
-      {% for r in classement %}
-      <tr>
-        <td>
-          {% if r.rang == 1 %}<span class="rang-1">🥇 1er</span>
-          {% elif r.rang == 2 %}<span class="rang-2">🥈 2ème</span>
-          {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
-          {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
-        </td>
-        <td><strong>{{ r.prenom }} {{ r.nom }}</strong></td>
-        <td><span class="{{ note_color(r.moyenne) }}">{{ r.moyenne }}/20</span></td>
-        <td>
-          {% set dec = r.decision or '' %}
-          <span class="badge {% if 'Admis' in dec %}b-green{% else %}b-red{% endif %}">{{ dec or '—' }}</span>
-        </td>
-      </tr>
-      {% else %}
-      <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px">Aucune donnée de classement.</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
+
+  <!-- Classement par matière -->
+  {% if matieres_classe %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📚 Classement par matière</span>
+      {% if matieres_classe %}
+      <span style="font-size:12px;color:var(--text-muted)">
+        {{ (matieres_classe | selectattr('id', 'eq', matiere_id) | list | first).nom if matiere_id else '' }}
+      </span>
+      {% endif %}
+    </div>
+    {% if not classement_matiere %}
+    <div style="padding:30px;text-align:center;color:var(--text-muted)">
+      <i class="bi bi-info-circle" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+      Aucune note saisie pour cette matière.
+    </div>
+    {% else %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rang</th><th>Étudiant</th><th style="text-align:center">Note /20</th></tr></thead>
+        <tbody>
+        {% for e in classement_matiere %}
+        <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ e.matricule }}'">
+          <td>
+            {% if e.rang == 1 %}<span class="rang-1">🥇 1er</span>
+            {% elif e.rang == 2 %}<span class="rang-2">🥈 2ème</span>
+            {% elif e.rang == 3 %}<span class="rang-3">🥉 3ème</span>
+            {% else %}<span class="rang-n">{{ e.rang }}ème</span>{% endif %}
+          </td>
+          <td><strong style="color:var(--primary)">{{ e.prenom }} {{ e.nom }}</strong></td>
+          <td style="text-align:center">
+            {% if e.note is not none %}
+            <span class="fs-6 {{ note_color(e.note) }}" style="font-weight:700;">{{ "%.2f"|format(e.note) }}/20</span>
+            {% else %}
+            <span style="color:var(--text-muted);font-style:italic">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
   </div>
+  {% endif %}
 </div>
 
 <!-- Résultats officiels sauvegardés -->
@@ -83,9 +149,9 @@
       <thead><tr><th>Rang</th><th>Étudiant</th><th>Moyenne</th><th>Décision</th><th>Année</th></tr></thead>
       <tbody>
       {% for res in resultats %}
-      <tr>
+      <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ res.etudiant.matricule }}'">
         <td><span class="rang-n">{{ res.rang }}ème</span></td>
-        <td><strong>{{ res.etudiant.prenom }} {{ res.etudiant.nom }}</strong></td>
+        <td><strong style="color:var(--primary)">{{ res.etudiant.prenom }} {{ res.etudiant.nom }}</strong></td>
         <td><span class="{{ note_color(res.moyenne_generale) }}">{{ res.moyenne_generale }}/20</span></td>
         <td>
           <span class="badge {% if res.decision and 'Admis' in res.decision %}b-green{% else %}b-red{% endif %}">
