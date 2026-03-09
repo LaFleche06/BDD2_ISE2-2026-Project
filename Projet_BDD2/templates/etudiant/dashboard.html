@@ -1,7 +1,28 @@
 {% extends 'base.html' %}
 {% block title %}Mon Tableau de Bord{% endblock %}
 {% block content %}
+{% if not dash %}
+<!-- Erreur de chargement du tableau de bord -->
+<div class="ph">
+  <div class="ph-left">
+    <h1>⚠️ Tableau de bord indisponible</h1>
+    <div class="ph-sub">Impossible de récupérer vos données</div>
+  </div>
+</div>
+<div class="card" style="padding:40px;text-align:center">
+  <i class="bi bi-exclamation-triangle-fill" style="font-size:48px;color:var(--danger);display:block;margin-bottom:16px"></i>
+  <h2 style="margin-bottom:8px">Erreur de connexion à l'API</h2>
+  <p style="color:var(--text-muted);max-width:480px;margin:0 auto 24px">
+    Impossible de charger votre tableau de bord. Cela peut être dû à une erreur de connexion à l'API ou à un problème de compte.
+  </p>
+  <div style="display:flex;gap:12px;justify-content:center">
+    <a href="{{ url_for('etudiant_dashboard') }}" class="btn btn-primary">🔄 Réessayer</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-sec">🚪 Se déconnecter</a>
+  </div>
+</div>
+{% else %}
 {% set d = dash %}
+
 
 {{ breadcrumb([{'name': 'Mon Espace', 'url': None}]) }}
 
@@ -91,4 +112,6 @@
     </div>
   </div>
 </div>
+{% endif %}
 {% endblock %}
+
