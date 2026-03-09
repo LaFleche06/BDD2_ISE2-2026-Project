@@ -20,10 +20,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from database.session import get_db
-from models.models import Classe, Matiere
+from models.models import Classe, Matiere, Intervention
 from schemas.schemas import (
     ClasseCreate, ClasseUpdate, ClasseResponse,
     MatiereCreate, MatiereUpdate, MatiereResponse,
+    InterventionResponse,
 )
 from core.dependencies import require_role
 
@@ -181,3 +182,6 @@ def delete_matiere(matiere_id: int, db: Session = Depends(get_db), _=admin_only)
             status_code=400,
             detail="Impossible de supprimer la matière (elle est utilisée ailleurs)"
         )
+
+
+# Fin du fichier

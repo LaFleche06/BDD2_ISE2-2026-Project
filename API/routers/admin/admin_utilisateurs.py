@@ -11,7 +11,7 @@ Corrections  :
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 
 from database.session import get_db
@@ -43,11 +43,52 @@ def mon_profil_admin(
     current_user: Utilisateur = Depends(require_role("admin")),
 ):
     """Retourne les informations de l'administrateur connecté."""
-    admin = db.query(Administrateur).filter(
+    admin = db.query(Administrateur).options(
+        joinedload(Administrateur.utilisateur)
+    ).filter(
         Administrateur.utilisateur_id == current_user.id
     ).first()
     if admin is None:
         raise HTTPException(status_code=404, detail="Profil administrateur introuvable")
+    return admin
+
+
+@router.get("/administrateurs", response_model=list[AdministrateurResponse])
+def list_administrateurs(db: Session = Depends(get_db), _=admin_only):
+    """Retourne la liste de tous les administrateurs."""
+    return db.query(Administrateur).options(joinedload(Administrateur.utilisateur)).all()
+
+
+@router.post("/administrateurs", response_model=AdministrateurResponse, status_code=status.HTTP_201_CREATED)
+def create_administrateur(data: AdministrateurCreate, db: Session = Depends(get_db), _=admin_only):
+    """Crée un nouvel administrateur et son compte utilisateur."""
+    if db.query(Utilisateur).filter(Utilisateur.email == data.email).first():
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+
+    try:
+        utilisateur = Utilisateur(
+            email=data.email,
+            mot_de_passe=hash_password(data.mot_de_passe),
+            role="admin",
+            actif=True,
+        )
+        db.add(utilisateur)
+        db.flush()
+
+        admin = Administrateur(
+            utilisateur_id=utilisateur.id,
+            nom=data.nom,
+            prenom=data.prenom,
+            telephone=data.telephone,
+        )
+        db.add(admin)
+        db.commit()
+        db.refresh(admin)
+
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Impossible de créer l'administrateur")
+
     return admin
 
 

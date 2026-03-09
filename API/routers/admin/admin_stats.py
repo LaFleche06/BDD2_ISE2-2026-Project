@@ -36,7 +36,7 @@ Le CAST force une division flottante, compatible avec SQL Server et SQLite.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import text, func
 
 from database.session import get_db
@@ -48,7 +48,7 @@ from models.models import (
     Note,
     Resultat
 )
-from schemas.schemas import NoteResponse,ResultatResponse
+from schemas.schemas import NoteResponse, NoteCompleteResponse, ResultatResponse
 from core.dependencies import require_role
 
 
@@ -64,8 +64,8 @@ admin_only = Depends(require_role("admin"))
 # CAST AS REAL garantit la division flottante sur SQLite ET SQL Server.
 # ─────────────────────────────────────────────
 _MOYENNE_SQL = """
-    CAST(SUM(n.valeur * m.coefficient) AS REAL) /
-    NULLIF(CAST(SUM(m.coefficient) AS REAL), 0)
+    (SUM(n.valeur * m.coefficient) * 1.0) /
+    NULLIF(SUM(m.coefficient), 0)
 """
 
 
@@ -95,7 +95,7 @@ def stats_globales(
     # Moyenne globale de l'établissement (pondérée)
     result = db.execute(
         text(f"""
-            SELECT ROUND({_MOYENNE_SQL}, 2)
+            SELECT ROUND(CAST({_MOYENNE_SQL} AS REAL), 2)
             FROM note n
             JOIN matiere m ON m.id = n.matiere_id
         """)
@@ -123,11 +123,12 @@ def stats_globales(
         """)
     ).fetchone()
 
-    taux_reussite = None
-    if result_reussite and result_reussite[0]:
+    taux_reussite = 0.0
+    if result_reussite:
         total = result_reussite[0]
         admis = result_reussite[1] or 0
-        taux_reussite = round((admis / total) * 100, 1)
+        if total and total > 0:
+            taux_reussite = round((admis / total) * 100, 1)
 
     return {
         "nb_etudiants":          nb_etudiants,
@@ -138,6 +139,16 @@ def stats_globales(
         "moyenne_etablissement": moyenne_etablissement,
         "taux_reussite_pct":     taux_reussite,
     }
+
+
+@router.get(
+    "/stats/annees",
+    summary="Liste des années scolaires",
+)
+def stats_annees(db: Session = Depends(get_db), _: object = admin_only):
+    """Retourne la liste des années scolaires distinctes."""
+    result = db.execute(text("SELECT DISTINCT annee_scolaire FROM classe WHERE annee_scolaire IS NOT NULL ORDER BY annee_scolaire DESC")).fetchall()
+    return [row[0] for row in result]
 
 
 @router.get(
@@ -157,11 +168,11 @@ def stats_classe(
         text(f"""
             SELECT
                 COUNT(*)                                               AS nb_etudiants,
-                SUM(CASE WHEN moy >= 10 THEN 1 ELSE 0 END)            AS nb_admis,
-                SUM(CASE WHEN moy < 10  THEN 1 ELSE 0 END)            AS nb_ajournes,
-                ROUND(AVG(moy), 2)                                     AS moyenne_classe,
-                MAX(moy)                                               AS meilleure_moyenne,
-                MIN(moy)                                               AS moins_bonne_moyenne
+                SUM(CASE WHEN CAST(moy AS REAL) >= 10.0 THEN 1 ELSE 0 END) AS nb_admis,
+                SUM(CASE WHEN CAST(moy AS REAL) < 10.0  THEN 1 ELSE 0 END) AS nb_ajournes,
+                ROUND(AVG(CAST(moy AS REAL)), 2)                           AS moyenne_classe,
+                ROUND(MAX(CAST(moy AS REAL)), 2)                           AS meilleure_moyenne,
+                ROUND(MIN(CAST(moy AS REAL)), 2)                           AS moins_bonne_moyenne
             FROM (
                 SELECT
                     e.matricule,
@@ -176,8 +187,14 @@ def stats_classe(
         {"classe_id": classe_id},
     ).fetchone()
 
-    nb_etudiants = result[0] or 0
-    nb_admis     = result[1] or 0
+    nb_etudiants = int(result[0]) if result[0] else 0
+    nb_admis     = int(result[1]) if result[1] else 0
+    nb_ajournes  = int(result[2]) if result[2] else 0
+    moyenne_classe = float(result[3]) if result[3] is not None else None
+    meilleure_moyenne = float(result[4]) if result[4] is not None else None
+    moins_bonne_moyenne = float(result[5]) if result[5] is not None else None
+    
+    taux_reussite = round((nb_admis / nb_etudiants) * 100, 1) if nb_etudiants > 0 else 0.0
 
     return {
         "classe_id":          classe_id,
@@ -185,11 +202,11 @@ def stats_classe(
         "annee_scolaire":     classe.annee_scolaire,
         "nb_etudiants":       nb_etudiants,
         "nb_admis":           nb_admis,
-        "nb_ajournes":        result[2] or 0,
-        "taux_reussite_pct":  round((nb_admis / nb_etudiants) * 100, 1) if nb_etudiants else None,
-        "moyenne_classe":     float(result[3]) if result[3] is not None else None,
-        "meilleure_moyenne":  float(result[4]) if result[4] is not None else None,
-        "moins_bonne_moyenne": float(result[5]) if result[5] is not None else None,
+        "nb_ajournes":        nb_ajournes,
+        "taux_reussite_pct":  taux_reussite,
+        "moyenne_classe":     moyenne_classe,
+        "meilleure_moyenne":  meilleure_moyenne,
+        "moins_bonne_moyenne": moins_bonne_moyenne,
     }
 # ─────────────────────────────────────────────
 # CLASSEMENT PAR CLASSE
@@ -340,19 +357,28 @@ def resultats_classe(
 
 @router.get(
     "/notes",
-    response_model=list[NoteResponse],
+    response_model=list[NoteCompleteResponse],
     summary="Liste des notes",
 )
 def all_notes(
     classe_id: int | None = Query(None, description="Filtrer les notes par classe"),
+    matiere_id: int | None = Query(None, description="Filtrer les notes par matière"),
     db: Session = Depends(get_db),
     _: object = admin_only,
 ):
-    query = db.query(Note)
+    from sqlalchemy.orm import joinedload
+    query = db.query(Note).options(
+        joinedload(Note.etudiant),
+        joinedload(Note.professeur),
+        joinedload(Note.matiere)
+    )
 
     if classe_id is not None:
         query = query.join(
             Etudiant, Note.etudiant_id == Etudiant.matricule
         ).filter(Etudiant.classe_id == classe_id)
+
+    if matiere_id is not None:
+        query = query.filter(Note.matiere_id == matiere_id)
 
     return query.all()

@@ -234,6 +234,9 @@ class NoteResponse(NoteBase):
 class NoteCompleteResponse(NoteBase):
     """Note avec tous les détails imbriqués (vue admin)."""
     id: int
+    matiere_id: int
+    professeur_id: int
+    etudiant_id: int
     matiere: MatiereResponse
     professeur: ProfesseurResponse
     etudiant: EtudiantResponse
@@ -285,7 +288,10 @@ class ResultatResponse(BaseModel):
 class NoteDetaillee(BaseModel):
     matiere: str
     coefficient: Decimal
-    valeur: Decimal
+    valeur: Optional[Decimal] = None
+    notes_saisies: Optional[int] = 0
+    total_etudiants: Optional[int] = 0
+    rang_matiere: Optional[int] = None
 
 class DashboardEtudiant(BaseModel):
     matricule: int
