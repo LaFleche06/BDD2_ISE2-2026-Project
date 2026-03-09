@@ -147,13 +147,19 @@ def desactiver_compte(
 @router.get("/etudiants", response_model=list[EtudiantDetailResponse])
 def list_etudiants(db: Session = Depends(get_db), _=admin_only):
     """Retourne la liste de tous les étudiants avec email et statut."""
-    return db.query(Etudiant).all()
+    return db.query(Etudiant).options(
+        joinedload(Etudiant.classe),
+        joinedload(Etudiant.utilisateur)
+    ).all()
 
 
 @router.get("/etudiants/{matricule}", response_model=EtudiantDetailResponse)
 def get_etudiant(matricule: int, db: Session = Depends(get_db), _=admin_only):
     """Retourne le détail d'un étudiant (avec email et statut du compte)."""
-    etudiant = db.query(Etudiant).filter(Etudiant.matricule == matricule).first()
+    etudiant = db.query(Etudiant).options(
+        joinedload(Etudiant.classe),
+        joinedload(Etudiant.utilisateur)
+    ).filter(Etudiant.matricule == matricule).first()
     if etudiant is None:
         raise HTTPException(status_code=404, detail="Étudiant introuvable")
     return etudiant

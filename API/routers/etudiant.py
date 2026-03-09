@@ -150,9 +150,27 @@ def mes_notes(
 
 
 
+# ─────────────────────────────────────────────
+
+# DASHBOARD
+
+# ─────────────────────────────────────────────
 
 
-# ─────────────�    etudiant = _get_etudiant(current_user, db)
+
+@router.get("/dashboard", response_model=DashboardEtudiant)
+
+def dashboard(
+
+    db: Session = Depends(get_db),
+
+    current_user: Utilisateur = Depends(etudiant_only),
+
+):
+
+    """Retourne le tableau de bord complet de l'étudiant avec calcul des moyennes et rangs."""
+
+    etudiant = _get_etudiant(current_user, db)
 
 
 
@@ -298,7 +316,7 @@ def mes_notes(
 
                             ELSE NULL END
 
-                        ) DESC NULLS LAST
+                        ) DESC
 
                     ) AS rang
 
@@ -327,29 +345,18 @@ def mes_notes(
             if r[0] == etudiant.matricule:
 
                 rang_calcule = r[1]
-
                 break
 
-
-
+    total_etudiants = db.query(Etudiant).filter(Etudiant.classe_id == etudiant.classe_id).count()
     return DashboardEtudiant(
-
         matricule        = etudiant.matricule,
-
         nom              = etudiant.nom,
-
         prenom           = etudiant.prenom,
-
         classe           = etudiant.classe.libelle,
-
         annee_scolaire   = etudiant.classe.annee_scolaire,
-
         moyenne_generale = moyenne,
-
         rang             = resultat.rang      if resultat else rang_calcule,
-
+        total_etudiants  = total_etudiants,
         decision         = resultat.decision  if resultat else None,
-
         notes            = notes_detaillees,
-
     )

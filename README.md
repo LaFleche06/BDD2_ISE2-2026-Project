@@ -1,251 +1,102 @@
-# 🎓 EDE — Espace de Gestion des Étudiants
+# Projet EDE - Gestion des Notes et des Étudiants
 
-![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.0-black?logo=flask)
-![SQL Server](https://img.shields.io/badge/SQL%20Server-2019%2B-red?logo=microsoftsqlserver)
-![License](https://img.shields.io/badge/License-MIT-green)
+Bienvenue dans le dépôt du projet EDE, une application complète (Frontend Web Flask + Backend API REST FastAPI) permettant la gestion scolaire (étudiants, professeurs, notes, matières, et classements).
 
-> Application web de gestion scolaire développée avec **Flask** et **SQL Server**.  
-> Elle permet la gestion complète des étudiants, professeurs, notes et résultats avec trois niveaux d'accès distincts.
+Ce projet comporte deux composants principaux :
+1. **L'API Backend (`/API`)** : Développée avec **FastAPI** et **SQLAlchemy**. Elle gère toute la logique métier, la base de données SQL Server et l'authentification (basée sur JWT).
+2. **Le Client Web (`/Projet_BDD2`)** : Développé avec **Flask**. C'est le portail utilisateur (Front-end) qui consomme l'API pour afficher les tableaux de bord et les vues dédiées aux Administrateurs, Professeurs et Étudiants.
 
 ---
 
-## 📋 Table des matières
+## 🏗️ Architecture et Déploiement
 
-- [Aperçu](#-aperçu)
-- [Fonctionnalités](#-fonctionnalités)
-- [Architecture](#-architecture)
-- [Prérequis](#-prérequis)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Structure du projet](#-structure-du-projet)
-- [Base de données](#-base-de-données)
-- [Comptes de test](#-comptes-de-test)
-- [Technologies utilisées](#-technologies-utilisées)
+Le projet est conçu pour fonctionner en environnement **Local** (développement) ainsi qu'en environnement de **Production** découpé sur le cloud AWS.
+
+### En Environnement de Production (AWS)
+- **Base de données principale** : Hébergée sur **Amazon RDS** (SQL Server). Oubliez la gestion de l'infrastructure de la base de données, RDS s'occupe des sauvegardes, de la haute disponibilité et des correctifs.
+- **Backend API (FastAPI)** : Déployé sur une instance **Amazon EC2**. Il se connecte de manière sécurisée à l'instance RDS. 
+
+*(Le client web Flask peut être hébergé sur une autre instance EC2, sur Elastic Beanstalk, ou localement chez l'administrateur en pointant vers l'EC2 de l'API).*
 
 ---
 
-## 👁️ Aperçu
+## 🚀 1. Exécution en Local (Développement)
 
-EDE est une plateforme scolaire à trois rôles :
+Pour faire tourner le projet sur votre propre machine (ex: Windows) :
 
-| Rôle | Accès |
-|------|-------|
-| 🎓 **Étudiant** | Consulter ses notes, sa moyenne pondérée et son rang |
-| 📚 **Professeur** | Saisir, modifier et supprimer les notes de ses classes |
-| ⚙️ **Administrateur** | Gérer toutes les données + classements + résultats officiels |
+### Pré-requis
+- Python 3.10+
+- Pilote ODBC 17 pour SQL Server installé sur votre machine.
+- Une instance locale SQL Server (ou un accès à votre RDS de dev).
 
----
+### Étape 1 : Configurer et Lancer l'API (FastAPI)
+1. Ouvrez un terminal et placez-vous dans le dossier `/API`.
+2. Créez et activez un environnement virtuel :
+   ```bash
+   python -m venv env
+   # Sous Windows :
+   env\Scripts\activate
+   ```
+3. Installez les dépendances :
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Configuration de la base de données :
+   - Assurez-vous que la chaîne de connexion (dsn) pointe vers votre base de données locale dans le fichier de config ou `.env`.
+   - Lancez les migrations/scripts de création si la base est vide.
+5. Démarrez le serveur uvicorn :
+   ```bash
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
+   *L'API sera disponible sur `http://localhost:8000` et la doc Swagger sur `http://localhost:8000/docs`.*
 
-## ✨ Fonctionnalités
-
-### 🎓 Espace Étudiant
-- Tableau de bord avec moyenne générale, rang et situation (Admis/Ajourné)
-- Consultation des notes par matière avec coefficient et barre visuelle
-- Profil personnel (matricule, classe, année scolaire)
-
-### 📚 Espace Professeur
-- Saisie des notes par classe et par matière
-- Modification et suppression des notes
-- Visualisation des moyennes et classement par classe
-- Vue de ses affectations (matière → classe)
-
-### ⚙️ Espace Administrateur
-- **Étudiants** : Ajouter, modifier, supprimer
-- **Professeurs** : Ajouter, modifier, supprimer, affecter aux matières/classes
-- **Matières** : Gestion complète avec coefficient et volume horaire
-- **Classes** : Gestion complète avec année scolaire
-- **Notes** : Vue globale avec filtrage par classe, ajout/modification/suppression
-- **Classements** : Classement automatique par classe avec sauvegarde officielle des résultats
-- **Statistiques globales** : Tableau de bord avec compteurs et moyenne générale
-
-### 🔐 Authentification
-- Connexion sécurisée avec hachage bcrypt
-- Sessions Flask avec rôles distincts
-- Déconnexion propre avec redirection vers la page de connexion
-
----
-
-## 🏗️ Architecture
-
-```
-EDE/
-├── app.py               # Routes Flask (toute la logique web)
-├── db.py                # Couche d'accès aux données (CRUD)
-├── config.py            # Paramètres de connexion SQL Server
-├── setup_passwords.py   # Script de hachage des mots de passe (1 fois)
-├── requirements.txt     # Dépendances Python
-├── create_db.sql        # Script SQL complet (tables + vues + données test)
-└── templates/
-    ├── base.html        # Layout principal (sidebar + topbar)
-    ├── login.html       # Page de connexion
-    ├── index.html       # Page d'accueil
-    ├── test_db.html     # Test de connexion BD
-    ├── etudiant/
-    │   ├── dashboard.html
-    │   ├── notes.html
-    │   └── profil.html
-    ├── prof/
-    │   ├── dashboard.html
-    │   ├── notes.html
-    │   ├── moyennes.html
-    │   └── classe.html
-    └── admin/
-        ├── dashboard.html
-        ├── etudiants.html
-        ├── form_etudiant.html
-        ├── professeurs.html
-        ├── form_prof.html
-        ├── matieres.html
-        ├── form_matiere.html
-        ├── classes.html
-        ├── notes.html
-        └── classements.html
-```
+### Étape 2 : Configurer et Lancer le Client Web (Flask)
+1. Ouvrez un autre terminal et placez-vous dans le dossier `/Projet_BDD2`.
+2. Activez le **même environnement virtuel** ou créez-en un nouveau et installez les dépendances :
+   ```bash
+   pip install flask requests
+   ```
+3. Configuration de l'accès à l'API :
+   - Ouvrez le fichier `config.py` (ou équivalent) présent dans `Projet_BDD2/`.
+   - Assurez-vous que la variable `API_BASE_URL` pointe bien sur `http://localhost:8000`.
+4. Démarrez le serveur Flask :
+   ```bash
+   python app.py
+   ```
+   *Le portail Web sera accessible sur `http://localhost:5000`.*
 
 ---
 
-## ⚙️ Prérequis
+## 🌍 2. Déploiement en Production (AWS EC2 + RDS)
 
-- **Python 3.12** (ne pas utiliser 3.13 ou 3.14 — pyodbc non compatible)
-- **SQL Server** (Express, Developer ou Standard) + **SSMS**
-- **ODBC Driver 17 for SQL Server**
-- **pip**
+### Étape 1 : Base de données (Amazon RDS)
+1. Créez une instance Amazon RDS pour **Microsoft SQL Server**.
+2. Récupérez le "Endpoint" (URL du cluster de la BD), le nom d'utilisateur et le mot de passe administrateur.
+3. Configurez les **Security Groups** d'AWS pour que l'instance EC2 de votre API puisse communiquer sur le port 1433 de l'instance RDS.
 
----
+### Étape 2 : L'API (Amazon EC2)
+1. Lancez une instance Linux (Ubuntu par exemple) sur Amazon EC2.
+2. Connectez-vous en SSH à l'instance EC2.
+3. Installez Python, pip, ainsi que le **pilote ODBC 17 pour SQL Server** pour Linux.
+   > *Sous Ubuntu, référez-vous [à la documentation Microsoft](https://learn.microsoft.com/fr-fr/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server) pour `msodbcsql17`.*
+4. Clonez ce dépôt GitHub.
+5. Allez dans le dossier `API/`, installez les packages (`pip install -r requirements.txt`).
+6. Mettez à jour la chaîne de connexion SQLAlchemy avec les informations de votre RDS.
+7. Lancez le serveur FastAPI en tâche de fond ou utilisant un gestionnaire comme **systemd** et **Gunicorn** (+ uvicorn workers) sur le port 80.
 
-## 🚀 Installation
-
-### 1. Cloner le dépôt
-
-```bash
-git clone https://github.com/votre-utilisateur/ede-gestion-etudiants.git
-cd ede-gestion-etudiants
-```
-
-### 2. Créer un environnement virtuel Python 3.12
-
-```powershell
-py -3.12 -m venv venv312
-venv312\Scripts\activate
-```
-
-### 3. Installer les dépendances
-
-```powershell
-pip install flask pyodbc bcrypt
-```
-
-### 4. Créer la base de données
-
-Ouvrez **SSMS**, puis :
-- `Fichier` → `Ouvrir` → `Fichier` → sélectionnez `create_db.sql`
-- Appuyez sur **F5**
-
-Vous devez voir :
-```
-Base EtudiantDB creee avec succes!
-Etape suivante : python setup_passwords.py
-```
-
-### 5. Configurer la connexion
-
-Modifiez `config.py` avec vos paramètres SQL Server :
-
-```python
-DB_SERVER   = 'localhost\\SQLEXPRESS'  # Votre serveur
-DB_NAME     = 'EtudiantDB'
-DB_USER     = 'sa'
-DB_PASSWORD = 'VotreMotDePasse'
-```
-
-Ou utilisez l'**authentification Windows** (plus simple) :
-
-```python
-def get_conn_string():
-    return (
-        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-        f"SERVER={DB_SERVER};"
-        f"DATABASE={DB_NAME};"
-        f"Trusted_Connection=yes;"
-        f"TrustServerCertificate=yes;"
-    )
-```
-
-### 6. Hacher les mots de passe
-
-```powershell
-python setup_passwords.py
-```
-Vous allez voir les mots de passe définis par défaut
-
-### 7. Lancer l'application
-
-```powershell
-python app.py
-```
-
-Ouvrez votre navigateur sur :
-```
-http://localhost:5000/EDE/index
-```
+### Étape 3 : Le Client HTTP (Flask)
+1. Déployez le client Flask (soit sur le même EC2, soit sur un autre).
+2. Remplacez la valeur de `API_BASE_URL` dans le dossier `Projet_BDD2/` avec l'adresse IP publique ou le nom de domaine de l'instance EC2 hébergeant FastAPI (ex: `http://ec2-xx-xx-xx-xx.compute.amazonaws.com:8000`).
 
 ---
 
-## 🗄️ Base de données
+## 👷‍♂️ Fonctionnalités Principales
 
-### Tables (9)
+- **Administrateur** : Création et gestion des élèves, des profs, des classes et des matières. Affectations des professeurs aux matières. Visualisation des statistiques globales et import massif.
+- **Professeur** : Tableau de bord de ses interventions. Saisie, modification et suppression des notes (une par une ou en traitement par lots) pour ses propres matières.
+- **Étudiant** : Tableau de bord complet. Visualisation du rang, de sa moyenne pondérée (calculée en direct) et du statut d'admission.
 
-| Table | Description |
-|-------|-------------|
-| `UTILISATEUR` | Comptes de connexion (email, mot de passe, rôle) |
-| `ETUDIANT` | Informations des étudiants (matricule, classe, téléphone) |
-| `PROFESSEUR` | Informations des professeurs |
-| `ADMINISTRATEUR` | Informations des administrateurs |
-| `Classe` | Classes (libellé, année scolaire) |
-| `MATIERES` | Matières (coefficient, volume horaire) |
-| `INTERVIENT` | Affectations prof → matière → classe |
-| `NOTES` | Notes des étudiants (valeur, date de saisie) |
-| `RESULTAT` | Résultats officiels sauvegardés |
-
-### Vues SQL (7)
-
-| Vue | Description |
-|-----|-------------|
-| `VUE_NOTES_COMPLETES` | Notes avec tous les détails (étudiant, prof, matière, classe) |
-| `VUE_MOYENNES_ETUDIANTS` | Moyennes pondérées par étudiant + décision |
-| `VUE_CLASSEMENT_CLASSE` | Classement automatique avec `RANK()` par classe |
-| `VUE_STATS_CLASSE` | Statistiques agrégées par classe (admis, taux réussite…) |
-| `VUE_ENSEIGNEMENTS` | Tableau des affectations professeurs |
-| `VUE_RESULTATS_COMPLETS` | Résultats officiels enrichis |
-| `VUE_STATS_GLOBALES` | Compteurs globaux du système |
-
----
-
-## 🔑 Comptes de test
-
-
-
----
-
-## 🛠️ Technologies utilisées
-
-| Technologie | Version | Rôle |
-|-------------|---------|------|
-| Python | 3.12 | Langage principal |
-| Flask | 3.0 | Framework web |
-| pyodbc | 5.0 | Connexion SQL Server |
-| bcrypt | 4.1 | Hachage des mots de passe |
-| SQL Server | 2019+ | Base de données |
-| Jinja2 | 3.x | Moteur de templates HTML |
-| HTML/CSS | — | Interface utilisateur |
-
----
-
-## 📄 Licence
-
-Ce projet est sous licence **MIT** — libre d'utilisation, modification et distribution.
-
----
-
-
+## 🛠️ Stack Technique
+- **Base de Données** : Microsoft SQL Server (Transact-SQL)
+- **Backend API** : Python, FastAPI, SQLAlchemy, Pydantic, Uvicorn, PassLib, JWT
+- **Frontend** : Python, Flask, Jinja2, HTML5/CSS3 natif

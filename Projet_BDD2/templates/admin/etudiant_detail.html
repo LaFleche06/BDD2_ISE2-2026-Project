@@ -92,7 +92,7 @@
             </td>
             <td style="text-align:right" onclick="event.stopPropagation()">
                 <button class="btn btn-sec btn-sm" title="Modifier"
-                        onclick="openModalModifierNote({{ n.id }}, '{{ n.valeur }}', '{{ m.nom }}')">
+                        onclick="openModalModifierNote({{ n.id }}, '{{ n.valeur }}', {{ m.nom|tojson }})">
                     <i class="bi bi-pencil"></i>
                 </button>
             </td>

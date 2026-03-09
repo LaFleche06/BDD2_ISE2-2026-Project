@@ -301,6 +301,7 @@ class DashboardEtudiant(BaseModel):
     annee_scolaire: Optional[str]
     moyenne_generale: Optional[Decimal]
     rang: Optional[int]
+    total_etudiants: Optional[int] = 0
     decision: Optional[str]
     notes: list[NoteDetaillee]
 
