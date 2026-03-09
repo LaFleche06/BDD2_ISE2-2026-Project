@@ -2,7 +2,7 @@
 {% block title %}{{ 'Modifier' if matiere else 'Ajouter' }} une matière{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>{{ '<i class="bi bi-pencil-square"></i> Modifier' if matiere else '+ Ajouter' }} une matière</h1></div>
+  <div><h1>{% if matiere %}<i class="bi bi-pencil-square"></i> Modifier{% else %}+ Ajouter{% endif %} une matière</h1></div>
   <a href="/EDE/admin/matieres" class="btn btn-sec">← Retour</a>
 </div>
 <div class="card" style="max-width:480px">
@@ -24,7 +24,7 @@
       </div>
     </div>
     <button class="btn btn-primary" type="submit">
-      {{ '<i class="bi bi-pencil-square"></i> Enregistrer' if matiere else '+ Créer' }}
+      {% if matiere %}<i class="bi bi-pencil-square"></i> Enregistrer{% else %}+ Créer{% endif %}
     </button>
   </form>
 </div>

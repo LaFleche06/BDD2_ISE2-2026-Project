@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from database.session import get_db
-from models.models import Classe, Matiere, Intervention
+from models.models import Classe, Matiere, Intervention, Note
 from schemas.schemas import (
     ClasseCreate, ClasseUpdate, ClasseResponse,
     MatiereCreate, MatiereUpdate, MatiereResponse,
@@ -174,13 +174,18 @@ def delete_matiere(matiere_id: int, db: Session = Depends(get_db), _=admin_only)
         raise HTTPException(status_code=404, detail="Matière introuvable")
 
     try:
+        # Supprimer d'abord les notes liées à la matière
+        db.query(Note).filter(Note.matiere_id == matiere_id).delete(synchronize_session=False)
+        # Supprimer les interventions liées à la matière
+        db.query(Intervention).filter(Intervention.matiere_id == matiere_id).delete(synchronize_session=False)
+        db.flush()
         db.delete(matiere)
         db.commit()
     except IntegrityError:
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="Impossible de supprimer la matière (elle est utilisée ailleurs)"
+            detail="Impossible de supprimer la matière (des données liées empêchent la suppression)"
         )
 
 
