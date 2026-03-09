@@ -1,8 +1,14 @@
 {% extends 'base.html' %}
 {% block title %}Classements{% endblock %}
 {% block content %}
+
+{{ breadcrumb([{'name': 'Classements & Résultats', 'url': None}]) }}
+
 <div class="ph">
-  <div><h1>🏆 Classements & Résultats</h1><div class="ph-sub">Classement en direct + résultats officiels</div></div>
+  <div class="ph-left">
+    <h1>🏆 Classements & Résultats</h1>
+    <div class="ph-sub">Classement en direct + résultats officiels</div>
+  </div>
 </div>
 
 <!-- Sélecteur de classe -->
@@ -53,8 +59,8 @@
           {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
           {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
         </td>
-        <td><strong>{{ r.nom if r.nom else (r.prenom + ' ' + r.nom_etudiant if r.nom_etudiant else '—') }}</strong></td>
-        <td><span class="{{ note_color(r.moyenne_generale) }}">{{ r.moyenne_generale }}/20</span></td>
+        <td><strong>{{ r.prenom }} {{ r.nom }}</strong></td>
+        <td><span class="{{ note_color(r.moyenne) }}">{{ r.moyenne }}/20</span></td>
         <td>
           {% set dec = r.decision or '' %}
           <span class="badge {% if 'Admis' in dec %}b-green{% else %}b-red{% endif %}">{{ dec or '—' }}</span>

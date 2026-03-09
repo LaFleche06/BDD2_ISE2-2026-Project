@@ -1,24 +1,33 @@
 {% extends 'base.html' %}
 {% block title %}Mes classes{% endblock %}
 {% block content %}
-<div class="ph"><div><h1>🏫 Mes classes</h1></div></div>
-<div class="card">
-  {% if classes %}
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Libellé</th><th>Année scolaire</th></tr></thead>
-      <tbody>
-      {% for c in classes %}
-      <tr>
-        <td><strong>{{ c.libelle }}</strong></td>
-        <td>{{ c.annee_scolaire or '—' }}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p style="color:#9ca3af;font-size:13px">Aucune classe affectée.</p>
-  {% endif %}
+
+{{ breadcrumb([
+  {'name': 'Tableau de bord', 'url': url_for('prof_dashboard')},
+  {'name': 'Mes Classes', 'url': None}
+]) }}
+
+<div class="ph">
+    <div class="ph-left">
+        <h1>🏫 Mes classes</h1>
+        <div class="ph-sub">Liste des classes où vous enseignez</div>
+    </div>
 </div>
+
+{% if classes %}
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+  {% for c in classes %}
+  <a href="{{ url_for('prof_moyennes', classe_id=c.id) }}" class="card" style="text-decoration:none; color:inherit; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:24px; transition: transform 0.2sease, box-shadow 0.2s ease;">
+    <div style="font-size:24px; color:var(--primary); margin-bottom:12px;"><i class="bi bi-people-fill"></i></div>
+    <div style="font-size:18px; font-weight:700; margin-bottom:4px;">{{ c.libelle }}</div>
+    <div style="font-size:13px; color:var(--text-muted);"><i class="bi bi-calendar-event"></i> {{ c.annee_scolaire or 'Année en cours' }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="padding:40px;text-align:center;color:var(--text-muted)">
+  <i class="bi bi-exclamation-circle" style="font-size:32px;display:block;margin-bottom:12px"></i>
+  Aucune classe affectée.
+</div>
+{% endif %}
 {% endblock %}

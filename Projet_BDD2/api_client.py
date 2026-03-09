@@ -90,8 +90,14 @@ def get_etudiant(token: str, matricule: int):
 
 
 def get_etudiants_by_classe(token: str, classe_id: int):
-    """Via l'endoint professeur (liste étudiants d'une classe)."""
+    """Via l'endpoint professeur (liste étudiants d'une classe)."""
     return _get(f"/prof/classes/{classe_id}/etudiants", token) or []
+
+
+def get_etudiants_admin_by_classe(token: str, classe_id: int):
+    """Via l'endpoint admin — filtre client-side par classe_id."""
+    all_etu = _get("/admin/etudiants", token) or []
+    return [e for e in all_etu if e.get('classe_id') == classe_id]
 
 
 def create_etudiant(token: str, payload: dict):
@@ -253,8 +259,12 @@ def get_mes_notes_etudiant(token: str):
 # NOTES — admin
 # ---------------------------------------------------------------------------
 
-def get_all_notes_admin(token: str, classe_id: int = None):
-    params = {"classe_id": classe_id} if classe_id else None
+def get_all_notes_admin(token: str, classe_id: int = None, matiere_id: int = None):
+    params = {}
+    if classe_id:
+        params["classe_id"] = classe_id
+    if matiere_id:
+        params["matiere_id"] = matiere_id
     return _get("/admin/notes", token, params=params) or []
 
 
@@ -268,6 +278,10 @@ def get_stats_globales(token: str):
 
 def get_stats_classe(token: str, classe_id: int):
     return _get(f"/admin/stats/classes/{classe_id}", token) or {}
+
+
+def get_annees_scolaires(token: str):
+    return _get("/admin/stats/annees", token) or []
 
 
 def get_classement_classe(token: str, classe_id: int):
@@ -299,6 +313,21 @@ def desactiver_compte(token: str, user_id: int):
     return _put(f"/admin/utilisateurs/{user_id}/desactiver", token)
 
 
+def get_all_administrateurs(token: str):
+    return _get("/admin/administrateurs", token) or []
+
+
+def create_administrateur(token: str, payload: dict):
+    return _post("/admin/administrateurs", token, payload)
+
+
 def reset_password(token: str, user_id: int, nouveau_mot_de_passe: str):
     return _put(f"/admin/utilisateurs/{user_id}/reset-password", token,
                 {"nouveau_mot_de_passe": nouveau_mot_de_passe})
+
+
+def change_password(token: str, ancien: str, nouveau: str):
+    return _put("/auth/mot-de-passe", token, {
+        "ancien_mot_de_passe": ancien,
+        "nouveau_mot_de_passe": nouveau
+    })

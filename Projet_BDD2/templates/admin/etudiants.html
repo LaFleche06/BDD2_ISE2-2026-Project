@@ -15,7 +15,7 @@
     </thead>
     <tbody>
     {% for e in etudiants %}
-    <tr>
+    <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ e.matricule }}'">
       <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:11px">{{ e.matricule }}</code></td>
       <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
       <td><span class="badge b-blue">{{ e.classe.libelle if e.classe else '—' }}</span></td>
@@ -27,7 +27,8 @@
           <span class="badge b-red">Inactif</span>
         {% endif %}
       </td>
-      <td style="white-space:nowrap">
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
+        <a href="/EDE/admin/etudiants/{{ e.matricule }}" class="btn btn-primary btn-xs" style="margin-right:4px">👁️ Profil</a>
         <a href="/EDE/admin/etudiants/modifier/{{ e.matricule }}" class="btn btn-sec btn-xs">✏️ Éditer</a>
         <form action="/EDE/admin/etudiants/supprimer/{{ e.matricule }}" method="post" style="display:inline"
               onsubmit="return confirm('Supprimer {{ e.prenom }} {{ e.nom }} ?')">

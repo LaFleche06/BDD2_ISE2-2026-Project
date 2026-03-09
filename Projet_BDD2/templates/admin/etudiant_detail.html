@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+{{ breadcrumb([
+  {'name': 'Étudiants', 'url': url_for('admin_etudiants')},
+  {'name': 'Dossier de ' ~ etudiant.prenom ~ ' ' ~ etudiant.nom, 'url': None}
+]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1><i class="bi bi-person-vcard"></i> {{ etudiant.prenom }} {{ etudiant.nom }}</h1>
+    <div class="ph-sub">Matricule #{{ etudiant.matricule }}</div>
+  </div>
+  <div>
+    <a href="{{ url_for('admin_etudiant_modifier', matricule=etudiant.matricule) }}" class="btn btn-primary">
+      <i class="bi bi-pencil"></i> Modifier le profil
+    </a>
+  </div>
+</div>
+
+<div class="form-row">
+  <!-- Contact & Infos -->
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-info-circle" style="color:var(--primary)"></i> Informations</span></div>
+    <table>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Classe Actuelle</th>
+          <td>{{ etudiant.classe.libelle if etudiant.classe else '<span style="color:var(--text-muted);font-style:italic">Non affecté</span>'|safe }}</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Téléphone</th>
+          <td>{{ etudiant.telephone or '<span style="color:var(--text-muted);font-style:italic">Non renseigné</span>'|safe }}</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Email</th>
+          <td>
+            {% if etudiant.utilisateur %}
+              <a href="mailto:{{ etudiant.utilisateur.email }}">{{ etudiant.utilisateur.email }}</a>
+            {% else %}
+              <span style="color:var(--text-muted)">N/A</span>
+            {% endif %}
+          </td>
+      </tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Statut</th>
+          <td>
+            {% if etudiant.utilisateur and etudiant.utilisateur.actif %}
+              <span class="badge b-green">Compte Actif</span>
+            {% else %}
+              <span class="badge b-red">Compte Inactif</span>
+            {% endif %}
+          </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Bulletin / Notes -->
+  <div class="card" style="grid-column: span 1;">
+    <div class="card-header">
+      <span class="card-title"><i class="bi bi-file-earmark-text" style="color:var(--success)"></i> Bulletin et Notes Obtenues</span>
+      {% if etudiant.classe %}
+      <a href="{{ url_for('admin_classements') }}?classe_id={{ etudiant.classe_id }}" class="btn btn-sec btn-xs">Voir le classement</a>
+      {% endif %}
+    </div>
+    
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Matière</th>
+            <th style="text-align:center">Note</th>
+            <th>Évalué par</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set notes_dict = {} %}
+          {% for n in notes %}
+              {% set _ = notes_dict.update({n.matiere_id: n}) %}
+          {% endfor %}
+
+          {% for m in matieres_classe %}
+          {% set n = notes_dict.get(m.id) %}
+          <tr style="cursor:pointer" onclick="window.location='/EDE/admin/matieres/{{ m.id }}'">
+            <td style="font-weight:700">{{ m.nom }} <br><span style="font-size:11px;color:var(--text-muted);font-weight:500;">Coef: {{ m.coefficient }}</span></td>
+            
+            {% if n %}
+            <td style="text-align:center">
+              {% if n.valeur is not none %}
+              <span style="font-size:16px;font-weight:800;" class="{{ note_color(n.valeur) }}">{{ "%.2f"|format(n.valeur) }}<span style="font-size:12px;color:var(--text-muted);font-weight:500;">/20</span></span>
+              {% else %}
+              <span style="color:var(--text-muted);font-style:italic;">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size:12px;color:var(--text-muted);">Prof #{{ n.professeur_id }}</span>
+              <br><span style="font-size:11px;color:var(--text-muted);">{{ n.date_saisie[:10] if n.date_saisie else '—' }}</span>
+            </td>
+            <td style="text-align:right" onclick="event.stopPropagation()">
+                <button class="btn btn-sec btn-sm" title="Modifier"
+                        onclick="openModalModifierNote({{ n.id }}, '{{ n.valeur }}', '{{ m.nom }}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </td>
+            {% else %}
+            <td style="text-align:center;font-style:italic;color:var(--text-muted)" colspan="2">Note pas encore dispo</td>
+            <td style="text-align:right;color:var(--text-muted)" onclick="event.stopPropagation()">-</td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted)">
+              Cet étudiant n'a pas encore de matières affectées dans sa classe.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Modification Note -->
+<div class="modal-bg" id="modalModifierNote">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModalModifierNote()"><i class="bi bi-x"></i></button>
+        <h3 class="modal-title">Modifier la note de <span id="modMatiereName" style="color:var(--primary);margin-left:6px;"></span></h3>
+        <form method="POST" action="{{ url_for('admin_notes', classe_id=etudiant.classe_id) }}">
+            <input type="hidden" name="action" value="modifier">
+            <input type="hidden" name="note_id" id="modNoteId">
+            <div class="form-group">
+                <label for="valeur_note">Nouvelle valeur (/20)</label>
+                <input type="number" step="0.25" min="0" max="20" name="valeur_note" id="modValeur" required style="font-size: 16px; padding: 12px; font-weight:700;">
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:24px;">
+                <button type="button" class="btn btn-sec" onclick="closeModalModifierNote()">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModalModifierNote(id, valeur, matiere) {
+        document.getElementById('modNoteId').value = id;
+        document.getElementById('modValeur').value = valeur;
+        document.getElementById('modMatiereName').textContent = matiere;
+        document.getElementById('modalModifierNote').classList.add('open');
+    }
+    function closeModalModifierNote() {
+        document.getElementById('modalModifierNote').classList.remove('open');
+    }
+</script>
+{% endblock %}

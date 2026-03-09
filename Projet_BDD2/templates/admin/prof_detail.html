@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+{{ breadcrumb([
+  {'name': 'Professeurs', 'url': url_for('admin_professeurs')},
+  {'name': 'Profil de ' ~ prof.prenom ~ ' ' ~ prof.nom, 'url': None}
+]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1><i class="bi bi-person-badge"></i> {{ prof.prenom }} {{ prof.nom }}</h1>
+    <div class="ph-sub">Dossier Professeur #{{ prof.id }}</div>
+  </div>
+  <div>
+    <a href="{{ url_for('admin_prof_modifier', pid=prof.id) }}" class="btn btn-primary">
+      <i class="bi bi-pencil"></i> Modifier le profil
+    </a>
+  </div>
+</div>
+
+<div class="form-row">
+  <!-- Contact & Infos -->
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-info-circle" style="color:var(--primary)"></i> Informations</span></div>
+    <table>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Identifiant</th><td>#{{ prof.id }}</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Téléphone</th><td>{{ prof.telephone or '<span style="color:var(--text-muted);font-style:italic">Non renseigné</span>'|safe }}</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Email</th>
+          <td>
+            {% if prof.utilisateur %}
+              <a href="mailto:{{ prof.utilisateur.email }}">{{ prof.utilisateur.email }}</a>
+            {% else %}
+              <span style="color:var(--text-muted)">N/A</span>
+            {% endif %}
+          </td>
+      </tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">Statut</th>
+          <td>
+            {% if prof.utilisateur and prof.utilisateur.actif %}
+              <span class="badge b-green">Compte Actif</span>
+            {% else %}
+              <span class="badge b-red">Compte Inactif</span>
+            {% endif %}
+          </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Récapitulatif Interventions -->
+  <div class="card" style="grid-column: span 1;">
+    <div class="card-header"><span class="card-title"><i class="bi bi-journal-bookmark" style="color:var(--success)"></i> Classes et Matières ({{ interventions|length }})</span></div>
+    {% if interventions %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Classe</th>
+            <th>Matière</th>
+            <th style="text-align:center">Avancement Saisie</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in interventions %}
+          <tr style="cursor:pointer" onclick="window.location='/EDE/admin/classes/{{ i.classe.id }}'">
+            <td style="font-weight:700">{{ i.classe.libelle }}</td>
+            <td>
+              <a href="/EDE/admin/matieres/{{ i.matiere.id }}" style="text-decoration:none;color:inherit" onclick="event.stopPropagation()">
+                {{ i.matiere.nom }}
+              </a>
+            </td>
+            <td style="text-align:center">
+              {% set fill = i.remplissage|default(0) %}
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                <div class="bar" style="width:80px">
+                  <div class="bar-fill {% if fill == 100 %}g{% elif fill > 0 %}o{% else %}r{% endif %}" style="width:{{ fill }}%"></div>
+                </div>
+                <span style="font-size:12px;font-weight:700">{{ fill }}%</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ i.nb_notes }}/{{ i.nb_etudiants }} notes</div>
+            </td>
+            <td style="text-align:right" onclick="event.stopPropagation()">
+              <a href="{{ url_for('admin_notes', classe_id=i.classe_id) }}" class="btn btn-sec btn-sm">
+                <i class="bi bi-eye"></i> Notes
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:40px;text-align:center;color:var(--text-muted)">
+      <i class="bi bi-calendar-x" style="font-size:32px;display:block;margin-bottom:12px;"></i>
+      Aucune affectation trouvée pour ce professeur.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

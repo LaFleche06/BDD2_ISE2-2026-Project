@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Nouvel Administrateur</h1>
+    <a href="{{ url_for('admin_administrateurs') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour
+    </a>
+</div>
+
+<div class="card shadow-sm mx-auto" style="max-width: 600px;">
+    <div class="card-body p-4">
+        <form method="POST">
+            <h5 class="mb-4 text-primary"><i class="bi bi-person-badge"></i> Informations du profil</h5>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label for="nom" class="form-label fw-semibold">Nom *</label>
+                    <input type="text" class="form-control" id="nom" name="nom" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="prenom" class="form-label fw-semibold">Prénom *</label>
+                    <input type="text" class="form-control" id="prenom" name="prenom" required>
+                </div>
+                <div class="col-md-12">
+                    <label for="telephone" class="form-label fw-semibold">Téléphone</label>
+                    <input type="tel" class="form-control" id="telephone" name="telephone" placeholder="Optionnel">
+                </div>
+            </div>
+
+            <hr class="text-muted">
+            <h5 class="my-4 text-primary"><i class="bi bi-shield-lock"></i> Identifiants de connexion</h5>
+
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Adresse Email *</label>
+                <input type="email" class="form-control" id="email" name="email" required placeholder="admin@ecole.com">
+                <div class="form-text">L'email servira d'identifiant de connexion.</div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="password" class="form-label fw-semibold">Mot de passe provisoire *</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password', this)" title="Afficher/Masquer">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <div class="form-text">Il est recommandé à l'administrateur de le modifier après sa première connexion.</div>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check2-circle"></i> Créer le compte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+    }
+}
+</script>
+{% endblock %}

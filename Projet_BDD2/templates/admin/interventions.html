@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Interventions{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>👨‍🏫 Interventions (Matières / Prof / Classe)</h1></div>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Professeur</th><th>Matière</th><th>Classe</th><th>Avancement (Notes)</th></tr></thead>
+      <tbody>
+      {% for i in interventions %}
+      <tr>
+        <td><strong>{{ i.professeur.prenom }} {{ i.professeur.nom }}</strong></td>
+        <td>{{ i.matiere.nom }}</td>
+        <td><span class="badge b-purple">{{ i.classe.libelle }}</span></td>
+        <td>
+            <div style="font-size:11px;color:#6b7280;margin-bottom:4px;font-weight:600">{{ i.nb_notes }} / {{ i.nb_etudiants }} ({{ i.remplissage }}%)</div>
+            <div class="bar"><div class="bar-fill {% if i.remplissage == 100 %}g{% elif i.remplissage > 0 %}o{% endif %}" style="width:{{ i.remplissage }}%"></div></div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:30px">Aucune intervention.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

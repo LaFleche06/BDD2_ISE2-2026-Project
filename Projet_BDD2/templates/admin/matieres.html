@@ -10,11 +10,12 @@
     <thead><tr><th>Nom</th><th>Coefficient</th><th>Volume horaire</th><th>Actions</th></tr></thead>
     <tbody>
     {% for m in matieres %}
-    <tr>
+    <tr style="cursor:pointer" onclick="window.location='/EDE/admin/matieres/{{ m.id }}'">
       <td><strong>{{ m.nom }}</strong></td>
       <td><span class="badge b-blue">{{ m.coefficient }}</span></td>
       <td style="color:#6b7280;font-size:12px">{{ m.volume_horaire or '—' }}</td>
-      <td style="white-space:nowrap">
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
+        <a href="/EDE/admin/matieres/{{ m.id }}" class="btn btn-primary btn-xs" style="margin-right:4px">👁️ Détails</a>
         <a href="/EDE/admin/matieres/modifier/{{ m.id }}" class="btn btn-sec btn-xs">✏️ Éditer</a>
         <form action="/EDE/admin/matieres/supprimer/{{ m.id }}" method="post" style="display:inline"
               onsubmit="return confirm('Supprimer {{ m.nom }} ?')">

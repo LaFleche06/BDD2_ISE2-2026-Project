@@ -7,7 +7,7 @@ import os
 # ------------------------------------------------------------
 # URL de base de l'API REST déployée (EC2 + RDS)
 # ------------------------------------------------------------
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api-ensae-bdd2-ise2-2026.duckdns.org")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 # ------------------------------------------------------------
 # Flask

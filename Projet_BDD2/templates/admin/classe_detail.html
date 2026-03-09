@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+{{ breadcrumb([
+  {'name': 'Classes', 'url': url_for('admin_classes')},
+  {'name': 'Dossier ' ~ classe.libelle, 'url': None}
+]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1><i class="bi bi-people"></i> {{ classe.libelle }}</h1>
+    <div class="ph-sub">Dossier de Classe</div>
+  </div>
+  <div>
+    <span class="badge b-grey" style="font-size:14px;padding:8px 16px;">{{ classe.annee_scolaire }}</span>
+  </div>
+</div>
+
+<!-- Statistiques Rapides -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+    <div class="stat-card">
+        <div class="stat-val">{{ stats.nb_etudiants | default(0) }}</div>
+        <div class="stat-lbl">INSCRITS</div>
+    </div>
+    <div class="stat-card p">
+        <div class="stat-val">{{ stats.moyenne_classe | default('--') }}</div>
+        <div class="stat-lbl">MOY. GÉNÉRALE</div>
+    </div>
+    <div class="stat-card g">
+        <div class="stat-val">{{ stats.meilleure_moyenne | default('--') }}</div>
+        <div class="stat-lbl">MEILLEURE</div>
+    </div>
+    <div class="stat-card r">
+        <div class="stat-val">{{ stats.moins_bonne_moyenne | default('--') }}</div>
+        <div class="stat-lbl">PIRE</div>
+    </div>
+    <div class="stat-card {% if stats.taux_reussite_pct and stats.taux_reussite_pct >= 50 %}g{% else %}r{% endif %}">
+        <div class="stat-val">
+            {% if stats.taux_reussite_pct is not none %}
+                {{ stats.taux_reussite_pct }}%
+            {% else %}
+                --
+            {% endif %}
+        </div>
+        <div class="stat-lbl">RÉUSSITE</div>
+    </div>
+</div>
+
+<div class="form-row">
+    <!-- Matières et État des saisies -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="bi bi-journal-check" style="color:var(--primary)"></i> Avancement des Saisies</span>
+        </div>
+        {% if interventions %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Matière</th>
+                        <th>Professeur</th>
+                        <th style="text-align:center">Avancement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in interventions %}
+                    <tr style="cursor:pointer" onclick="window.location='/EDE/admin/matieres/{{ i.matiere.id }}'">
+                        <td style="font-weight:700;font-size:13px">{{ i.matiere.nom }}</td>
+                        <td style="font-size:13px">
+                            <a href="/EDE/admin/professeurs/{{ i.professeur.id }}" style="text-decoration:none;color:inherit" onclick="event.stopPropagation()">
+                                {{ i.professeur.prenom }} {{ i.professeur.nom }}
+                            </a>
+                        </td>
+                        <td style="text-align:center">
+                            {% set fill = i.remplissage|default(0) %}
+                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                                <div class="bar" style="width:60px">
+                                    <div class="bar-fill {% if fill == 100 %}g{% elif fill > 0 %}o{% else %}r{% endif %}" style="width:{{ fill }}%"></div>
+                                </div>
+                                <span style="font-size:11px;font-weight:700">{{ fill }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted)">
+            <i class="bi bi-exclamation-circle" style="font-size:32px;display:block;margin-bottom:12px"></i>
+            Aucune matière n'est assignée à cette classe pour le moment.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Liste des élèves et classement -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="bi bi-list-ol" style="color:var(--success)"></i> Étudiants et Classement Provisoire</span>
+            <a href="{{ url_for('admin_classements', classe_id=classe.id) }}" class="btn btn-sec btn-xs">
+                Résultats officiels
+            </a>
+        </div>
+        {% if etudiants %}
+        <div class="table-wrap" style="max-height: 400px;">
+            <table>
+                <thead style="position: sticky; top: 0; z-index: 1;">
+                    <tr>
+                        <th>Rang</th>
+                        <th>Étudiant</th>
+                        <th style="text-align:center">Moyenne</th>
+                        <th style="text-align:right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set classement_dict = {} %}
+                    {% for c in classement %}
+                        {% set _ = classement_dict.update({c.matricule: c}) %}
+                    {% endfor %}
+
+                    {% for e in etudiants %}
+                    {% set c = classement_dict.get(e.matricule) %}
+                    <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ e.matricule }}'">
+                        <td>
+                            {% if c %}
+                                <span class="badge rang-{% if c.rang <= 3 %}{{ c.rang }}{% else %}n{% endif %}">
+                                    {{ c.rang }}{% if c.rang == 1 %}er{% else %}e{% endif %}
+                                </span>
+                            {% else %}
+                                <span style="color:var(--text-muted)">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong style="display:block">{{ e.nom }} {{ e.prenom }}</strong>
+                            <span style="font-size:11px;color:var(--text-muted)">#{{ e.matricule }}</span>
+                        </td>
+                        <td style="text-align:center">
+                            {% if c and c.moyenne is not none %}
+                                <span class="fs-6 {{ note_color(c.moyenne) }}" style="font-weight:700">{{ c.moyenne|float|round(2) }}</span>
+                            {% else %}
+                                <span style="color:var(--text-muted);font-style:italic;font-size:12px">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right" onclick="event.stopPropagation()">
+                            <a href="{{ url_for('admin_etudiant_detail', matricule=e.matricule) }}" class="btn btn-sec btn-sm" title="Voir le dossier">
+                                <i class="bi bi-eye"></i> Profil
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted)">
+            <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:12px"></i>
+            Aucun étudiant n'est inscrit dans cette classe.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

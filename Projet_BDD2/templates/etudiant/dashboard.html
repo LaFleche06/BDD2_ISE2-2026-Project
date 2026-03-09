@@ -2,8 +2,11 @@
 {% block title %}Mon Tableau de Bord{% endblock %}
 {% block content %}
 {% set d = dash %}
+
+{{ breadcrumb([{'name': 'Mon Espace', 'url': None}]) }}
+
 <div class="ph">
-  <div>
+  <div class="ph-left">
     <h1>Bonjour, {{ d.prenom }} 👋</h1>
     <div class="ph-sub">{{ d.classe }} — {{ d.annee_scolaire or '' }}</div>
   </div>
@@ -11,37 +14,81 @@
 <div class="stats-grid">
   <div class="stat-card">
     <div class="stat-val {% set mv = d.moyenne_generale|float(0) %}{% if mv >= 10 %}note-good{% elif mv >= 8 %}note-avg{% else %}note-bad{% endif %}">
-      {{ d.moyenne_generale or '—' }}/20
+      {{ d.moyenne_generale or '—' }}<span style="font-size:16px;color:var(--text-muted);font-weight:600;">/20</span>
     </div>
     <div class="stat-lbl">Moyenne générale</div>
   </div>
-  <div class="stat-card g">
-    <div class="stat-val">{{ d.notes|length }}</div>
-    <div class="stat-lbl">Notes saisies</div>
-  </div>
-  <div class="stat-card p">
-    <div class="stat-val">{{ d.rang if d.rang else '—' }}</div>
+  <div class="stat-card p" title="Le rang sera disponible après que l'administrateur ait publié les résultats officiels.">
+    <div class="stat-val">
+      {% if d.rang %}
+        {{ d.rang }}<span style="font-size:16px;color:var(--text-muted);font-weight:600;">/{{ total_etudiants }}</span>
+      {% else %}
+        <span style="font-size:14px;color:var(--text-muted)">Non<br>publié</span>
+      {% endif %}
+    </div>
     <div class="stat-lbl">Rang dans la classe</div>
   </div>
+  <div class="stat-card g">
+    <div class="stat-val">{{ d.notes|selectattr('valeur', '!=', None)|list|length }}<span style="font-size:16px;color:var(--text-muted);font-weight:600;">/{{ d.notes|length }}</span></div>
+    <div class="stat-lbl">Notes saisies</div>
+  </div>
   <div class="stat-card {% set mv2 = d.moyenne_generale|float(0) %}{% if mv2 >= 10 %}g{% else %}r{% endif %}">
-    <div class="stat-val" style="font-size:18px">
+    <div class="stat-val" style="font-size:24px;margin-top:6px;">
       {% if d.decision %}{{ d.decision }}{% elif d.moyenne_generale and d.moyenne_generale|float >= 10 %}✅ Admis{% else %}⚠️ Ajourné{% endif %}
     </div>
-    <div class="stat-lbl">Décision officielle</div>
+    <div class="stat-lbl">Statut</div>
   </div>
 </div>
-<div class="card">
-  <div class="card-header"><span class="card-title">Mes informations</span></div>
-  <table>
-    <tr>
-      <td style="width:180px;color:#9ca3af;font-size:12px;font-weight:600">MATRICULE</td>
-      <td><code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-size:12px">{{ d.matricule }}</code></td>
-    </tr>
-    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">NOM COMPLET</td><td>{{ d.prenom }} {{ d.nom }}</td></tr>
-    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">CLASSE</td><td><span class="badge b-blue">{{ d.classe }}</span></td></tr>
-    <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">ANNÉE</td><td>{{ d.annee_scolaire or '—' }}</td></tr>
-  </table>
-  <br>
-  <a href="/EDE/etudiant/notes" class="btn btn-primary">📊 Voir mes notes →</a>
+
+<div class="form-row">
+  <div class="card" style="grid-column: span 1;">
+    <div class="card-header"><span class="card-title"><i class="bi bi-file-earmark-text"></i> Mes notes détaillées</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Matière</th>
+            <th style="text-align:center">Coefficient</th>
+            <th style="text-align:center">Note Obtenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in d.notes %}
+          <tr>
+            <td style="font-weight:700">{{ n.matiere }}</td>
+            <td style="text-align:center"><span class="badge b-grey">{{ n.coefficient }}</span></td>
+            <td style="text-align:center">
+              {% if n.valeur is not none %}
+                <span class="fs-5 {{ note_color(n.valeur) }}" style="font-weight:800">{{ "%.2f"|format(n.valeur|float) }}</span>
+              {% else %}
+                <span style="color:var(--text-muted);font-style:italic">Note pas encore dispo</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="3" style="text-align:center;padding:20px;color:var(--text-muted)">Aucune matière affectée.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-person-badge"></i> Mes informations</span></div>
+    <table>
+      <tr>
+        <th style="background:transparent;border:none;padding-left:0;color:var(--text-muted);">Matricule</th>
+        <td><code style="background:var(--light);padding:4px 8px;border-radius:6px;font-size:13px;font-weight:700;">{{ d.matricule }}</code></td>
+      </tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;color:var(--text-muted);">Nom Complet</th><td style="font-weight:600;">{{ d.prenom }} {{ d.nom }}</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;color:var(--text-muted);">Classe Actuelle</th><td><span class="badge b-blue">{{ d.classe }}</span></td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;color:var(--text-muted);">Année Scolaire</th><td>{{ d.annee_scolaire or '—' }}</td></tr>
+    </table>
+    <div style="margin-top:24px;">
+      <a href="/EDE/etudiant/notes" class="btn btn-primary" style="width:100%"><i class="bi bi-bar-chart"></i> Consulter l'historique complet</a>
+    </div>
+  </div>
 </div>
 {% endblock %}

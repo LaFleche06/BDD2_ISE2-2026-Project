@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+{{ breadcrumb([
+  {'name': 'Tableau de bord', 'url': url_for('admin_dashboard')},
+  {'name': 'Administrateurs', 'url': None}
+]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1><i class="bi bi-shield-check"></i> Administrateurs</h1>
+    <div class="ph-sub">Gestion des comptes administrateurs de l'établissement</div>
+  </div>
+  <a href="{{ url_for('admin_administrateur_ajouter') }}" class="btn btn-primary">
+    <i class="bi bi-person-plus"></i> Ajouter un Administrateur
+  </a>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Nom & Prénom</th>
+          <th>Téléphone</th>
+          <th>Email</th>
+          <th style="text-align:center;">Statut Compte</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for admin in administrateurs %}
+        <tr>
+          <td><code style="background:var(--light);padding:3px 8px;border-radius:5px;font-size:12px;font-weight:700;">#{{ admin.id }}</code></td>
+          <td style="font-weight:700;">{{ admin.prenom or '' }} {{ admin.nom or '' }}</td>
+          <td>{{ admin.telephone or '<span style="color:var(--text-muted);font-style:italic;">Non renseigné</span>'|safe }}</td>
+          <td>
+            {% if admin.utilisateur %}
+              <a href="mailto:{{ admin.utilisateur.email }}">{{ admin.utilisateur.email }}</a>
+            {% else %}
+              <span style="color:var(--text-muted);">N/A</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if admin.utilisateur and admin.utilisateur.actif %}
+              <span class="badge b-green">Actif</span>
+            {% else %}
+              <span class="badge b-red">Inactif</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            {% if admin.utilisateur and admin.utilisateur.id != session.entity_id %}
+              {% if admin.utilisateur.actif %}
+                <form action="{{ url_for('admin_desactiver', user_id=admin.utilisateur.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Désactiver ce compte administrateur ?');">
+                  <button type="submit" class="btn btn-sec btn-sm" title="Désactiver le compte">
+                    <i class="bi bi-person-x"></i> Désactiver
+                  </button>
+                </form>
+              {% else %}
+                <form action="{{ url_for('admin_activer', user_id=admin.utilisateur.id) }}" method="POST" style="display:inline;">
+                  <button type="submit" class="btn btn-sec btn-sm" title="Activer le compte" style="background:var(--success-bg);border-color:var(--success);color:#065f46;">
+                    <i class="bi bi-person-check"></i> Activer
+                  </button>
+                </form>
+              {% endif %}
+            {% else %}
+              <span style="color:var(--text-muted);font-size:12px;">— Vous —</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">
+            <i class="bi bi-info-circle" style="font-size:28px;display:block;margin-bottom:8px;"></i>
+            Aucun administrateur trouvé.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

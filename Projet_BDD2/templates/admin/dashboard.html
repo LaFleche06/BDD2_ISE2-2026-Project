@@ -1,15 +1,45 @@
 {% extends 'base.html' %}
 {% block title %}Tableau de Bord Admin{% endblock %}
 {% block content %}
-<div class="ph"><h1>⚙️ Tableau de Bord</h1><div class="ph-sub">Administration générale</div></div>
-<div class="stats-grid">
-  <div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants or 0 }}</div><div class="stat-lbl">Étudiants</div></div>
-  <div class="stat-card g"><div class="stat-val">{{ stats.nb_professeurs or 0 }}</div><div class="stat-lbl">Professeurs</div></div>
-  <div class="stat-card p"><div class="stat-val">{{ stats.nb_classes or 0 }}</div><div class="stat-lbl">Classes</div></div>
-  <div class="stat-card o"><div class="stat-val">{{ stats.nb_matieres or 0 }}</div><div class="stat-lbl">Matières</div></div>
-  <div class="stat-card r"><div class="stat-val">{{ stats.nb_notes or 0 }}</div><div class="stat-lbl">Notes saisies</div></div>
-  <div class="stat-card"><div class="stat-val">{{ stats.moyenne_generale or stats.moyenne_globale or '—' }}</div><div class="stat-lbl">Moyenne globale</div></div>
+
+{{ breadcrumb([{'name': 'Tableau de Bord', 'url': None}]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1>⚙️ Tableau de Bord</h1>
+    <div class="ph-sub">Administration générale de l'établissement</div>
+  </div>
+  <form method="GET" class="d-flex" style="display:flex;gap:10px;align-items:center;">
+    <select name="annee_scolaire" class="form-control" style="width:150px;" onchange="this.form.submit()">
+      <option value="">Toutes les années</option>
+      {% for a in annees %}
+        <option value="{{ a }}" {% if annee_filtre == a %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+  </form>
 </div>
+
+{% if alerts %}
+<div style="margin-bottom:24px;">
+  {% for alert in alerts %}
+  <div class="alert alert-{{ alert.type }}">
+    {% if alert.type == 'danger' %}🚨{% elif alert.type == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+    {{ alert.msg }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="stats-grid">
+  <a href="/EDE/admin/etudiants" style="text-decoration:none;color:inherit"><div class="stat-card"><div class="stat-val">{{ stats.nb_etudiants or 0 }}</div><div class="stat-lbl">Étudiants</div></div></a>
+  <a href="/EDE/admin/professeurs" style="text-decoration:none;color:inherit"><div class="stat-card g"><div class="stat-val">{{ stats.nb_professeurs or 0 }}</div><div class="stat-lbl">Professeurs</div></div></a>
+  <a href="/EDE/admin/classes" style="text-decoration:none;color:inherit"><div class="stat-card p"><div class="stat-val">{{ stats.nb_classes or 0 }}</div><div class="stat-lbl">Classes</div></div></a>
+  <a href="/EDE/admin/matieres" style="text-decoration:none;color:inherit"><div class="stat-card o"><div class="stat-val">{{ stats.nb_matieres or 0 }}</div><div class="stat-lbl">Matières</div></div></a>
+  <a href="/EDE/admin/notes" style="text-decoration:none;color:inherit"><div class="stat-card r"><div class="stat-val">{{ stats.nb_notes or 0 }}</div><div class="stat-lbl">Notes saisies</div></div></a>
+  <div class="stat-card"><div class="stat-val">{{ stats.moyenne_etablissement or '—' }}</div><div class="stat-lbl">Moyenne globale</div></div>
+  <div class="stat-card"><div class="stat-val">{{ stats.taux_reussite_pct ~ '%' if stats.taux_reussite_pct is not none else '—' }}</div><div class="stat-lbl">Taux de réussite</div></div>
+</div>
+
 <div class="form-row">
   <div class="card">
     <div class="card-header"><span class="card-title">🚀 Accès rapide</span></div>
@@ -25,10 +55,10 @@
   <div class="card">
     <div class="card-header"><span class="card-title">ℹ️ Informations système</span></div>
     <table>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">API</td><td>FastAPI — EC2 + RDS</td></tr>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">AUTH</td><td>JWT Bearer Token</td></tr>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">RÔLES</td><td>admin / prof / etudiant</td></tr>
-      <tr><td style="color:#9ca3af;font-size:12px;font-weight:600">FRAMEWORK</td><td>Flask + requests</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">API</th><td>FastAPI — EC2 + RDS</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">AUTH</th><td>JWT Bearer Token</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">RÔLES</th><td>admin / prof / etudiant</td></tr>
+      <tr><th style="background:transparent;border:none;padding-left:0;">FILTRE ACTIF</th><td>{{ annee_filtre or 'Aucun' }}</td></tr>
     </table>
     <br><a href="/EDE/test-api" class="btn btn-sec btn-sm">🔌 Tester la connexion API</a>
   </div>

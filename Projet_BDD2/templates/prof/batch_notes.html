@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Saisie en Batch{% endblock %}
+{% block content %}
+<div class="ph">
+  <div><h1>⚡ Saisie Rapide (Batch)</h1><div class="ph-sub">Envoyer les notes automatiquement</div></div>
+</div>
+
+<div class="card" style="padding:14px 20px;margin-bottom:18px">
+  <form method="get" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap" id="filter-form">
+    <div style="flex:1;min-width:200px">
+      <label>Classe</label>
+      <select name="classe_id" onchange="document.getElementById('filter-form').submit()">
+        {% for c in classes %}
+        <option value="{{ c.id }}" {{ 'selected' if classe_id == c.id }}>{{ c.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <label>Matière</label>
+      <select name="matiere_id" onchange="document.getElementById('filter-form').submit()">
+        {% for m in matieres %}
+        <option value="{{ m.id }}" {{ 'selected' if matiere_id == m.id }}>{{ m.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📝 Étudiants</span>
+    <button class="btn btn-green" id="btn-batch-submit" onclick="submitBatch()">🚀 Envoyer tout (Automatique)</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Matricule</th><th>Étudiant</th><th>Note (Existante)</th><th>Nouvelle Note (/20)</th><th>Statut</th></tr></thead>
+      <tbody id="batch-tbody">
+      {% for e in etudiants %}
+      <tr data-etudiant="{{ e.matricule }}">
+        <td style="color:#9ca3af;font-size:11px">{{ e.matricule }}</td>
+        <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
+        <td>
+            {% if e.matricule in existing_notes %}
+            <span class="badge b-purple">{{ existing_notes[e.matricule].valeur }}/20</span>
+            {% else %}
+            <span style="color:#9ca3af;font-size:12px">Aucune</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if e.matricule not in existing_notes %}
+            <input type="number" step="0.25" min="0" max="20" class="batch-input" data-eid="{{ e.matricule }}" placeholder="Saisir note..." style="max-width: 150px; padding: 6px 10px;">
+            {% else %}
+            <span class="badge b-grey">Déjà saisie</span>
+            {% endif %}
+        </td>
+        <td class="status-cell" id="status-{{ e.matricule }}">—</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:30px">Aucun étudiant dans cette classe.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function submitBatch() {
+    const btn = document.getElementById('btn-batch-submit');
+    const inputs = document.querySelectorAll('.batch-input');
+    const matiere_id = document.querySelector('select[name="matiere_id"]').value;
+    
+    if (!matiere_id) {
+        alert("Veuillez choisir une matière.");
+        return;
+    }
+
+    let toSubmit = [];
+    inputs.forEach(inp => {
+        if (inp.value.trim() !== "") {
+            toSubmit.push({
+                etudiant_id: inp.getAttribute('data-eid'),
+                valeur: parseFloat(inp.value)
+            });
+        }
+    });
+
+    if (toSubmit.length === 0) {
+        alert("Aucune note à envoyer.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Envoi en cours...";
+
+    for (let i = 0; i < toSubmit.length; i++) {
+        const item = toSubmit[i];
+        const statusCell = document.getElementById('status-' + item.etudiant_id);
+        const inputField = document.querySelector(`.batch-input[data-eid="${item.etudiant_id}"]`);
+        
+        statusCell.innerHTML = '<span class="badge b-blue">Envoi...</span>';
+        
+        try {
+            const response = await fetch('/EDE/professeur/notes/batch_submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    etudiant_id: item.etudiant_id,
+                    matiere_id: matiere_id,
+                    valeur: item.valeur
+                })
+            });
+            
+            if (response.ok) {
+                statusCell.innerHTML = '<span class="badge b-green">✔ Succès</span>';
+                inputField.disabled = true;
+            } else {
+                statusCell.innerHTML = '<span class="badge b-red">✖ Erreur</span>';
+            }
+        } catch (error) {
+            statusCell.innerHTML = '<span class="badge b-red">✖ Erreur R.</span>';
+        }
+        
+        // Small delay to simulate "automatique un à un" and sequential processing
+        await new Promise(r => setTimeout(r, 400));
+    }
+    
+    btn.innerHTML = "✅ Terminé";
+    setTimeout(() => {
+        window.location.reload();
+    }, 1500);
+}
+</script>
+{% endblock %}

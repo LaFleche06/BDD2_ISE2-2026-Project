@@ -27,7 +27,7 @@
     <thead><tr><th>Libellé</th><th>Année scolaire</th><th>Étudiants</th><th>Taux réussite</th><th>Actions</th></tr></thead>
     <tbody>
     {% for c in classes %}
-    <tr>
+    <tr style="cursor:pointer" onclick="window.location='/EDE/admin/classes/{{ c.id }}'">
       <td><strong>{{ c.libelle }}</strong></td>
       <td>{{ c.annee_scolaire or '—' }}</td>
       <td>{{ c.nb_etudiants or 0 }}</td>
@@ -37,7 +37,8 @@
           {{ '%.0f'|format(tx) }}%
         </span>
       </td>
-      <td>
+      <td onclick="event.stopPropagation()">
+        <a href="/EDE/admin/classes/{{ c.id }}" class="btn btn-primary btn-xs" style="margin-right:4px">👁️ Détails</a>
         <!-- Modifier via modal inline -->
         <button class="btn btn-sec btn-xs" onclick="document.getElementById('mod-{{ c.id }}').classList.add('open')">✏️ Éditer</button>
         <form action="/EDE/admin/classes/supprimer/{{ c.id }}" method="post" style="display:inline"

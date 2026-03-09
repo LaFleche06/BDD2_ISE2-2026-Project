@@ -7,6 +7,7 @@ from config import SECRET_KEY
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
 def login_required(role=None):
@@ -40,6 +41,12 @@ def note_color(val):
 
 
 app.jinja_env.globals['note_color'] = note_color
+
+# Generic breadcrumbs generator (called from jinja directly or context processors)
+def generate_breadcrumbs(*crumbs):
+    return [{'name': name, 'url': url} for name, url in crumbs if name]
+
+app.jinja_env.globals['generate_breadcrumbs'] = generate_breadcrumbs
 
 
 def _token():
@@ -134,7 +141,37 @@ def test_api():
 @login_required('etudiant')
 def etudiant_dashboard():
     dash = api.get_dashboard_etudiant(_token())
-    return render_template('etudiant/dashboard.html', dash=dash)
+    if not dash:
+        flash("Impossible de charger le tableau de bord. Veuillez réessayer.", "danger")
+        return redirect(url_for('index'))
+    # Pre-convert string decimal values to float to avoid Jinja filter issues
+    for n in dash.get('notes', []):
+        v = n.get('valeur')
+        if v is not None:
+            try:
+                n['valeur'] = float(v)
+            except (ValueError, TypeError):
+                n['valeur'] = None
+        coef = n.get('coefficient')
+        if coef is not None:
+            try:
+                n['coefficient'] = float(coef)
+            except (ValueError, TypeError):
+                pass
+    moy = dash.get('moyenne_generale')
+    if moy is not None:
+        try:
+            dash['moyenne_generale'] = float(moy)
+        except (ValueError, TypeError):
+            dash['moyenne_generale'] = None
+    # The dashboard API already computes rang for the student
+    rang_reel = dash.get('rang')
+    # Get total students in class from the prof classement endpoint using etudiant's class
+    total_etudiants = dash.get('total_etudiants') or dash.get('nb_etudiants_classe') or 0
+    # If the API doesn't return total, try to count from notes available (fallback: show just rank)
+    return render_template('etudiant/dashboard.html', dash=dash,
+                           total_etudiants=total_etudiants,
+                           rang_reel=rang_reel)
 
 
 @app.route('/EDE/etudiant/profil')
@@ -159,6 +196,18 @@ def prof_dashboard():
     # regrouper matières et classes distinctes
     matieres = {i['matiere_id']: i['matiere'] for i in interventions}.values()
     classes  = {i['classe_id']:  i['classe']  for i in interventions}.values()
+
+    notes = api.get_mes_notes(_token())
+    for i in interventions:
+        etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+        nb_etudiants = len(etudiants)
+        etud_ids = {e['matricule'] for e in etudiants}
+        nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+        
+        i['nb_etudiants'] = nb_etudiants
+        i['nb_notes'] = nb_notes
+        i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
+
     return render_template('prof/dashboard.html',
                            interventions=interventions,
                            matieres=list(matieres),
@@ -219,18 +268,104 @@ def prof_notes():
                            notes=notes_affichees, interventions=interventions)
 
 
+@app.route('/EDE/professeur/notes/batch')
+@login_required('prof')
+def prof_notes_batch():
+    interventions = api.get_mes_interventions(_token())
+    classes  = list({i['classe_id']: i['classe'] for i in interventions}.values())
+    
+    classe_id = request.args.get('classe_id', type=int)
+    matiere_id = request.args.get('matiere_id', type=int)
+
+    if not classe_id and classes:
+        classe_id = classes[0]['id']
+
+    # Filter matieres by the selected class
+    matieres_for_class = [i['matiere'] for i in interventions if i['classe_id'] == classe_id]
+    matieres = list({m['id']: m for m in matieres_for_class}.values())
+    
+    if not matiere_id and matieres:
+        matiere_id = matieres[0]['id']
+
+    etudiants = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
+    notes     = api.get_mes_notes(_token())
+    existing_notes = {n['etudiant_id']: n for n in notes if n['matiere_id'] == matiere_id}
+    
+    return render_template('prof/batch_notes.html',
+                           classes=classes, classe_id=classe_id,
+                           matieres=matieres, matiere_id=matiere_id,
+                           etudiants=etudiants, existing_notes=existing_notes)
+
+
+@app.route('/EDE/professeur/notes/batch_submit', methods=['POST'])
+@login_required('prof')
+def prof_notes_batch_submit():
+    data = request.json
+    r = api.saisir_note(
+        _token(),
+        data.get('etudiant_id'),
+        data.get('matiere_id'),
+        data.get('valeur')
+    )
+    if r.status_code == 201:
+        return {"status": "success"}, 200
+    return {"status": "error", "message": r.text}, 400
+
+
 @app.route('/EDE/professeur/moyennes')
 @login_required('prof')
 def prof_moyennes():
     interventions = api.get_mes_interventions(_token())
     classes  = list({i['classe_id']: i['classe'] for i in interventions}.values())
     classe_id = request.args.get('classe_id', type=int)
+    matiere_id = request.args.get('matiere_id', type=int)
     if not classe_id and classes:
         classe_id = classes[0]['id']
+
+    # Matières pour la classe sélectionnée
+    matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i['classe_id'] == classe_id}.values())
+    if not matiere_id and matieres_classe:
+        matiere_id = matieres_classe[0]['id']
+
+    # Classement général de la classe (toutes matières)
     c_data = api.get_classement_prof(_token(), classe_id) if classe_id else []
-    classement = c_data.get('classement', []) if isinstance(c_data, dict) else c_data
+    classement_general = c_data.get('classement', []) if isinstance(c_data, dict) else (c_data or [])
+
+    # Classement par matière : notes de la matière sélectionnée, triées par valeur desc
+    notes_prof = api.get_mes_notes(_token())
+    notes_matiere = [n for n in notes_prof if n['matiere_id'] == matiere_id]
+    etudiants_classe = api.get_etudiants_admin_by_classe(_token(), classe_id) if classe_id else []
+    etud_by_mat_id = {e['matricule']: e for e in etudiants_classe}
+
+    classement_matiere = []
+    for n in notes_matiere:
+        etud = etud_by_mat_id.get(n['etudiant_id']) or {}
+        try:
+            val = float(n['valeur'])
+        except (ValueError, TypeError):
+            val = None
+        classement_matiere.append({
+            'nom': etud.get('nom', '?'),
+            'prenom': etud.get('prenom', '?'),
+            'matricule': n['etudiant_id'],
+            'note': val,
+        })
+    classement_matiere.sort(key=lambda x: (x['note'] is None, -(x['note'] or 0)))
+    for idx, e in enumerate(classement_matiere):
+        e['rang'] = idx + 1
+
+    # Convert note values
+    for e in classement_general:
+        try:
+            e['moyenne'] = float(e.get('moyenne', 0) or 0)
+        except (ValueError, TypeError):
+            e['moyenne'] = None
+
     return render_template('prof/moyennes.html',
-                           classes=classes, classe_id=classe_id, classement=classement)
+                           classes=classes, classe_id=classe_id,
+                           matieres_classe=matieres_classe, matiere_id=matiere_id,
+                           classement=classement_general,
+                           classement_matiere=classement_matiere)
 
 
 @app.route('/EDE/professeur/classe')
@@ -246,7 +381,70 @@ def prof_classe():
 @login_required('admin')
 def admin_dashboard():
     stats = api.get_stats_globales(_token())
-    return render_template('admin/dashboard.html', stats=stats)
+    interventions = api.get_all_interventions(_token())
+    classes = api.get_all_classes(_token())
+    notes = api.get_all_notes_admin(_token())
+    annees = api.get_annees_scolaires(_token())
+    annee_filtre = request.args.get('annee_scolaire')
+    
+    # Filter stats based on year
+    if annee_filtre:
+        classes = [c for c in classes if c.get('annee_scolaire') == annee_filtre]
+        stats['nb_classes'] = len(classes)
+        # simplistic recalculation for alerts
+        
+    alerts = []
+    
+    classes_ids = {c['id']: c for c in classes}
+    for c in classes:
+        # Check if intervention exists
+        c_intervs = [i for i in interventions if i['classe_id'] == c['id']]
+        if not c_intervs:
+             alerts.append({"type": "warning", "msg": f"La classe {c['libelle']} n'a aucune intervention."})
+             
+        for i in c_intervs:
+            etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+            etud_ids = {e['matricule'] for e in etudiants}
+            nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+            nb_etudiants = len(etud_ids)
+            if nb_etudiants > 0 and nb_notes == 0:
+                 alerts.append({"type": "danger", "msg": f"La matière {i['matiere']['nom']} pour {c['libelle']} a un taux de remplissage de 0%."})
+
+    return render_template('admin/dashboard.html', stats=stats, alerts=alerts, annees=annees, annee_filtre=annee_filtre)
+
+
+# -- Administrateurs -------------------------------------------------------------
+@app.route('/EDE/admin/administrateurs')
+@login_required('admin')
+def admin_administrateurs():
+    administrateurs = api.get_all_administrateurs(_token())
+    return render_template('admin/administrateurs.html', administrateurs=administrateurs)
+
+
+@app.route('/EDE/admin/administrateurs/ajouter', methods=['GET', 'POST'])
+@login_required('admin')
+def admin_administrateur_ajouter():
+    if request.method == 'POST':
+        try:
+            nom    = request.form['nom'].strip()
+            prenom = request.form['prenom'].strip()
+            telephone = request.form.get('telephone', '').strip() or None
+            email  = request.form.get('email', '').strip()
+            mdp    = request.form['password'].strip()
+            r = api.create_administrateur(_token(), {
+                "nom": nom, "prenom": prenom, "telephone": telephone,
+                "email": email, "mot_de_passe": mdp,
+            })
+            if r.status_code == 201:
+                flash('Administrateur ajouté avec succès.', 'success')
+                return redirect(url_for('admin_administrateurs'))
+            else:
+                detail = r.json().get('detail', r.text) if r.content else r.text
+                flash(f'Erreur : {detail}', 'danger')
+        except Exception as e:
+            flash(f'Erreur : {e}', 'danger')
+    return render_template('admin/form_admin.html')
+
 
 
 # -- Étudiants -----------------------------------------------------------------
@@ -311,6 +509,41 @@ def admin_etudiant_modifier(matricule):
     return render_template('admin/form_etudiant.html', etudiant=etudiant, classes=classes)
 
 
+@app.route('/EDE/admin/etudiants/<int:matricule>')
+@login_required('admin')
+def admin_etudiant_detail(matricule):
+    etudiant = api.get_etudiant(_token(), matricule)
+    if not etudiant:
+        flash('Étudiant introuvable.', 'danger')
+        return redirect(url_for('admin_etudiants'))
+    
+    notes = api.get_notes_etudiant_admin(_token(), matricule)
+    # Pre-convert string decimals to float
+    for n in notes:
+        try:
+            n['valeur'] = float(n['valeur'])
+        except (ValueError, TypeError, KeyError):
+            n['valeur'] = None
+        # Also fix coefficient in nested matiere
+        mat = n.get('matiere') or {}
+        try:
+            mat['coefficient'] = float(mat.get('coefficient', 1))
+        except (ValueError, TypeError):
+            pass
+    # Get all subjects for student's class to show missing grades
+    interventions = api.get_all_interventions(_token())
+    classe_id = etudiant.get('classe_id')
+    if classe_id:
+        matieres_classe = list({i['matiere_id']: i['matiere'] for i in interventions if i.get('classe_id') == classe_id}.values())
+    else:
+        matieres_classe = []
+    
+    return render_template('admin/etudiant_detail.html', 
+                           etudiant=etudiant, 
+                           notes=notes,
+                           matieres_classe=matieres_classe)
+
+
 @app.route('/EDE/admin/etudiants/supprimer/<int:matricule>', methods=['POST'])
 @login_required('admin')
 def admin_etudiant_supprimer(matricule):
@@ -359,6 +592,28 @@ def admin_prof_ajouter():
             flash(f'Erreur : {e}', 'danger')
     return render_template('admin/form_prof.html', prof=None, matieres=matieres, classes=classes)
 
+@app.route('/EDE/admin/professeurs/<int:pid>')
+@login_required('admin')
+def admin_prof_detail(pid):
+    prof = api.get_professeur(_token(), pid)
+    if not prof:
+        flash('Professeur introuvable.', 'danger')
+        return redirect(url_for('admin_professeurs'))
+        
+    interventions = [i for i in api.get_all_interventions(_token()) if i['professeur_id'] == pid]
+    notes = api.get_all_notes_admin(_token())
+    
+    for i in interventions:
+        etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+        etud_ids = {e['matricule'] for e in etudiants}
+        nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+        nb_etudiants = len(etud_ids)
+        
+        i['nb_etudiants'] = nb_etudiants
+        i['nb_notes'] = nb_notes
+        i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
+
+    return render_template('admin/prof_detail.html', prof=prof, interventions=interventions)
 
 @app.route('/EDE/admin/professeurs/modifier/<int:pid>', methods=['GET', 'POST'])
 @login_required('admin')
@@ -437,6 +692,37 @@ def admin_matiere_ajouter():
     return render_template('admin/form_matiere.html', matiere=None)
 
 
+@app.route('/EDE/admin/matieres/<int:mid>')
+@login_required('admin')
+def admin_matiere_detail(mid):
+    matieres = api.get_all_matieres(_token())
+    matiere = next((m for m in matieres if m['id'] == mid), None)
+    if not matiere:
+        flash('Matière introuvable.', 'danger')
+        return redirect(url_for('admin_matieres'))
+    
+    interventions = [i for i in api.get_all_interventions(_token()) if i['matiere_id'] == mid]
+    notes = api.get_all_notes_admin(_token(), matiere_id=mid)
+    # Pre-convert note values
+    for n in notes:
+        try:
+            n['valeur'] = float(n['valeur'])
+        except (ValueError, TypeError):
+            n['valeur'] = None
+
+    for i in interventions:
+        etudiants = api.get_etudiants_admin_by_classe(_token(), i['classe_id'])
+        etud_ids = {e['matricule'] for e in etudiants}
+        # NoteCompleteResponse has no classe_id — filter only by matiere_id and etudiant_id
+        nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+        nb_etudiants = len(etud_ids)
+        
+        i['nb_etudiants'] = nb_etudiants
+        i['nb_notes'] = nb_notes
+        i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
+
+    return render_template('admin/matiere_detail.html', matiere=matiere, interventions=interventions, notes=notes)
+
 @app.route('/EDE/admin/matieres/modifier/<int:mid>', methods=['GET', 'POST'])
 @login_required('admin')
 def admin_matiere_modifier(mid):
@@ -476,7 +762,7 @@ def admin_classes():
     for c in classes:
         s = api.get_stats_classe(_token(), c['id'])
         c['nb_etudiants']  = s.get('nb_etudiants', 0)
-        c['taux_reussite'] = s.get('taux_reussite', 0)
+        c['taux_reussite'] = s.get('taux_reussite_pct', 0)
     return render_template('admin/classes.html', classes=classes)
 
 
@@ -515,6 +801,41 @@ def admin_classe_supprimer(cid):
     return redirect(url_for('admin_classes'))
 
 
+@app.route('/EDE/admin/classes/<int:cid>')
+@login_required('admin')
+def admin_classe_detail(cid):
+    classes = api.get_all_classes(_token())
+    classe = next((c for c in classes if c['id'] == cid), None)
+    if not classe:
+        flash('Classe introuvable.', 'danger')
+        return redirect(url_for('admin_classes'))
+
+    stats      = api.get_stats_classe(_token(), cid)
+    etudiants  = api.get_etudiants_admin_by_classe(_token(), cid)
+    
+    c_data = api.get_classement_classe(_token(), cid)
+    classement = c_data.get('classement', []) if isinstance(c_data, dict) else c_data
+
+    # Retrieve missing fill rate for that given class subjects
+    interventions = [i for i in api.get_all_interventions(_token()) if i['classe_id'] == cid]
+    notes = api.get_all_notes_admin(_token(), cid)
+    
+    for i in interventions:
+        etud_ids = {e['matricule'] for e in etudiants}
+        nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+        nb_etudiants = len(etud_ids)
+        
+        i['nb_etudiants'] = nb_etudiants
+        i['nb_notes'] = nb_notes
+        i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
+
+    return render_template('admin/classe_detail.html', 
+                           classe=classe,
+                           stats=stats,
+                           etudiants=etudiants,
+                           classement=classement,
+                           interventions=interventions)
+
 # -- Notes admin ---------------------------------------------------------------
 @app.route('/EDE/admin/notes', methods=['GET', 'POST'])
 @login_required('admin')
@@ -523,8 +844,9 @@ def admin_notes():
     matieres    = api.get_all_matieres(_token())
     professeurs = api.get_all_professeurs(_token())
     classe_id   = request.args.get('classe_id', type=int)
+    matiere_id  = request.args.get('matiere_id', type=int)
     etudiants   = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
-    notes       = api.get_all_notes_admin(_token(), classe_id)
+    notes       = api.get_all_notes_admin(_token(), classe_id=classe_id, matiere_id=matiere_id)
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -540,11 +862,11 @@ def admin_notes():
             )
             flash('Note modifiée.' if r.status_code == 200 else f'Erreur : {r.text}',
                   'success' if r.status_code == 200 else 'danger')
-        return redirect(url_for('admin_notes', classe_id=classe_id))
+        return redirect(url_for('admin_notes', classe_id=classe_id, matiere_id=matiere_id))
 
     return render_template('admin/notes.html',
                            classes=classes, matieres=matieres, professeurs=professeurs,
-                           etudiants=etudiants, notes=notes, classe_id=classe_id)
+                           etudiants=etudiants, notes=notes, classe_id=classe_id, matiere_id=matiere_id)
 
 
 # -- Classements ---------------------------------------------------------------
@@ -603,8 +925,56 @@ def admin_reset_password(user_id):
     return redirect(request.referrer or url_for('admin_etudiants'))
 
 
+@app.route('/EDE/admin/interventions')
+@login_required('admin')
+def admin_interventions():
+    interventions = api.get_all_interventions(_token())
+    notes = api.get_all_notes_admin(_token())
+    
+    for i in interventions:
+        etudiants = api.get_etudiants_by_classe(_token(), i['classe_id'])
+        nb_etudiants = len(etudiants)
+        etud_ids = {e['matricule'] for e in etudiants}
+        nb_notes = sum(1 for n in notes if n['matiere_id'] == i['matiere_id'] and n['etudiant_id'] in etud_ids)
+        
+        i['nb_etudiants'] = nb_etudiants
+        i['nb_notes'] = nb_notes
+        i['remplissage'] = round((nb_notes / nb_etudiants * 100), 1) if nb_etudiants > 0 else 0
+
+    return render_template('admin/interventions.html', interventions=interventions)
+
+@app.route('/EDE/profil/mot_de_passe', methods=['GET', 'POST'])
+def modifier_mot_de_passe():
+    if 'token' not in session:
+        return redirect(url_for('login'))
+        
+    if request.method == 'POST':
+        ancien = request.form.get('ancien_mdp', '').strip()
+        nouveau = request.form.get('nouveau_mdp', '').strip()
+        confirmer = request.form.get('confirmer_mdp', '').strip()
+        
+        if not ancien or not nouveau or not confirmer:
+            flash("Veuillez remplir tous les champs.", "warning")
+        elif nouveau != confirmer:
+            flash("Les nouveaux mots de passe ne correspondent pas.", "danger")
+        else:
+            r = api.change_password(_token(), ancien, nouveau)
+            if r.status_code == 200:
+                flash("Mot de passe modifié avec succès. Veuillez vous reconnecter.", "success")
+                session.clear()
+                return redirect(url_for('login'))
+            else:
+                try:
+                    detail = r.json().get('detail', r.text)
+                except Exception:
+                    detail = r.text
+                flash(f"Erreur : {detail}", "danger")
+
+    return render_template('modifier_mdp.html')
+
+
 import os
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 

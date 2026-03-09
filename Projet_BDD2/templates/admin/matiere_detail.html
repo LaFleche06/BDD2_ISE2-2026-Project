@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Détails de la matière {{ matiere.nom }}{% endblock %}
+{% block content %}
+<div class="ph">
+  <div>
+    <h1>📖 {{ matiere.nom }}</h1>
+    <div class="ph-sub">Coef: {{ matiere.coefficient }} • Volume: {{ matiere.volume_horaire or 'Non défini' }}</div>
+  </div>
+  <a href="/EDE/admin/matieres" class="btn btn-sec">← Retour</a>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header"><span class="card-title">👨‍🏫 Professeurs et Classes affiliés</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Classe</th>
+          <th>Professeur</th>
+          <th>Étudiants</th>
+          <th>Remplissage des notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in interventions %}
+        <tr style="cursor:pointer" onclick="window.location='/EDE/admin/classes/{{ i.classe_id }}'">
+          <td><span class="badge b-blue">{{ i.classe.libelle }}</span></td>
+          <td style="color:var(--text-muted);font-size:13px">{{ i.professeur.prenom }} {{ i.professeur.nom }}</td>
+          <td>{{ i.nb_etudiants }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="flex:1;background:#e5e7eb;height:8px;border-radius:4px;overflow:hidden">
+                <div style="width:{{ i.remplissage }}%;background:var(--primary);height:100%"></div>
+              </div>
+              <span style="font-size:12px;color:var(--text-muted);min-width:35px">{{ i.remplissage }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:20px">Aucune classe ou professeur affilié.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="card-title">📝 Toutes les notes pour cette matière</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Étudiant</th>
+          <th>Classe</th>
+          <th>Note</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in notes %}
+        <tr style="cursor:pointer" onclick="window.location='/EDE/admin/etudiants/{{ n.etudiant.matricule }}'">
+          <td><strong>{{ n.etudiant.prenom }} {{ n.etudiant.nom }}</strong><br><span style="font-size:11px;color:var(--text-muted)">{{ n.etudiant.classe.libelle if n.etudiant.classe else '' }}</span></td>
+          <td>
+            {% if n.valeur is not none %}
+            <span class="{{ note_color(n.valeur) }}">{{ "%.2f"|format(n.valeur) }}/20</span>
+            {% else %}
+            <span style="color:var(--text-muted)">—</span>
+            {% endif %}
+          </td>
+          <td style="color:#9ca3af;font-size:12px">{{ (n.date_saisie or '')[:10] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:20px">Aucune note enregistrée.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

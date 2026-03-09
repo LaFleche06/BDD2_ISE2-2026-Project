@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}Tableau de bord Professeur{% endblock %}
 {% block content %}
+
+{{ breadcrumb([{'name': 'Espace Professeur', 'url': None}]) }}
+
 <div class="ph">
-  <div>
+  <div class="ph-left">
     <h1>Bonjour, {{ session.nom }} 👋</h1>
     <div class="ph-sub">Espace Professeur</div>
   </div>
@@ -19,30 +22,39 @@
 </div>
 <div class="form-row">
   <div class="card">
-    <div class="card-header"><span class="card-title">📚 Mes matières et classes</span></div>
+    <div class="card-header"><span class="card-title"><i class="bi bi-journal-check"></i> Mes matières et classes</span></div>
     {% if interventions %}
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Matière</th><th>Coefficient</th><th>Classe</th></tr></thead>
+        <thead><tr><th>Matière</th><th>Coefficient</th><th>Classe</th><th>Avancement (Notes)</th></tr></thead>
         <tbody>
         {% for i in interventions %}
         <tr>
           <td><strong>{{ i.matiere.nom }}</strong></td>
           <td><span class="badge b-blue">{{ i.matiere.coefficient }}</span></td>
           <td><span class="badge b-purple">{{ i.classe.libelle }}</span></td>
+          <td>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;font-weight:600">{{ i.nb_notes }} / {{ i.nb_etudiants }} ({{ i.remplissage }}%)</div>
+            <div class="bar"><div class="bar-fill {% if i.remplissage == 100 %}g{% elif i.remplissage > 0 %}o{% else %}r{% endif %}" style="width:{{ i.remplissage }}%"></div></div>
+          </td>
         </tr>
         {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-    <p style="color:#9ca3af;font-size:13px">Aucune affectation pour le moment.</p>
+    <div style="padding:30px;text-align:center;color:var(--text-muted);">Aucune affectation pour le moment.</div>
     {% endif %}
   </div>
   <div class="card">
     <div class="card-header"><span class="card-title">🚀 Accès rapide</span></div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <a href="/EDE/professeur/notes" class="btn btn-primary">✏️ Saisir / gérer les notes</a>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <a href="/EDE/professeur/notes" class="btn btn-primary" style="padding:16px;">
+        <i class="bi bi-pencil-fill"></i> 
+        <span>
+            Saisir / Gérer les notes (Saisie Batch)
+        </span>
+      </a>
       <a href="/EDE/professeur/moyennes" class="btn btn-sec">📈 Voir les moyennes</a>
       <a href="/EDE/professeur/classe" class="btn btn-sec">🏫 Mes classes</a>
     </div>

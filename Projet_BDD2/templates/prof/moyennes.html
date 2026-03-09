@@ -1,47 +1,111 @@
 {% extends 'base.html' %}
-{% block title %}Moyennes de ma classe{% endblock %}
+{% block title %}Moyennes & Classements{% endblock %}
 {% block content %}
+
+{{ breadcrumb([
+  {'name': 'Tableau de bord', 'url': url_for('prof_dashboard')},
+  {'name': 'Moyennes & Classement', 'url': None}
+]) }}
+
 <div class="ph">
-  <div><h1>📈 Moyennes</h1><div class="ph-sub">Classement provisoire</div></div>
+  <div class="ph-left">
+    <h1>📈 Moyennes & Classements</h1>
+    <div class="ph-sub">Classement par matière et général de vos classes</div>
+  </div>
 </div>
 
-<!-- Sélecteur de classe -->
-<div class="card" style="padding:14px 20px;margin-bottom:18px">
-  <form method="get" style="display:flex;gap:14px;align-items:center">
-    <div style="flex:1">
-      <label style="margin-bottom:4px">Classe</label>
-      <select name="classe_id" onchange="this.form.submit()">
+<!-- Sélecteurs -->
+<div class="card" style="padding:16px 24px; margin-bottom:24px;">
+  <form method="get" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
+    <div>
+      <label style="margin-bottom:8px;font-weight:600;color:var(--text-muted);font-size:13px;display:block;"><i class="bi bi-building"></i> Classe</label>
+      <select name="classe_id" onchange="this.form.submit()" class="form-select" style="min-width:160px;padding:10px;border-radius:6px;border:1px solid var(--border);">
         {% for c in classes %}
         <option value="{{ c.id }}" {{ 'selected' if classe_id == c.id }}>{{ c.libelle }}</option>
         {% endfor %}
       </select>
     </div>
+    <div>
+      <label style="margin-bottom:8px;font-weight:600;color:var(--text-muted);font-size:13px;display:block;"><i class="bi bi-book"></i> Matière (classement par note)</label>
+      <select name="matiere_id" onchange="this.form.submit()" class="form-select" style="min-width:200px;padding:10px;border-radius:6px;border:1px solid var(--border);">
+        {% for m in matieres_classe %}
+        <option value="{{ m.id }}" {{ 'selected' if matiere_id == m.id }}>{{ m.nom }} (coef {{ m.coefficient }})</option>
+        {% endfor %}
+        {% if not matieres_classe %}
+        <option value="">Aucune matière disponible</option>
+        {% endif %}
+      </select>
+    </div>
   </form>
 </div>
 
-<div class="table-wrap">
-  <table>
-    <thead><tr><th>Rang</th><th>Étudiant</th><th>Moyenne</th><th>Décision</th></tr></thead>
-    <tbody>
-    {% for r in classement %}
-    <tr>
-      <td>
-        {% if r.rang == 1 %}<span class="rang-1">🥇 1er</span>
-        {% elif r.rang == 2 %}<span class="rang-2">🥈 2ème</span>
-        {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
-        {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
-      </td>
-      <td><strong>{{ r.etudiant.prenom }} {{ r.etudiant.nom }}</strong></td>
-      <td><span class="{{ note_color(r.moyenne_generale) }}">{{ r.moyenne_generale }}/20</span></td>
-      <td>
-        {% set dec = r.decision or '' %}
-        <span class="badge {% if 'Admis' in dec %}b-green{% else %}b-red{% endif %}">{{ dec or '—' }}</span>
-      </td>
-    </tr>
+<div class="form-row">
+  <!-- Classement par matière -->
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-bar-chart-line"></i> Classement par matière</span></div>
+    {% if not matieres_classe %}
+    <div style="padding:30px;text-align:center;color:var(--text-muted);">Vous n'êtes affecté à aucune matière dans cette classe.</div>
+    {% elif not classement_matiere %}
+    <div style="padding:30px;text-align:center;color:var(--text-muted);"><i class="bi bi-info-circle" style="font-size:24px;display:block;margin-bottom:8px;"></i> Aucune note saisie pour cette matière.</div>
     {% else %}
-    <tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:30px">Aucun résultat disponible.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rang</th><th>Étudiant</th><th style="text-align:center;">Note /20</th></tr></thead>
+        <tbody>
+        {% for e in classement_matiere %}
+        <tr>
+          <td>
+            {% if e.rang == 1 %}<span class="rang-1">🥇 1er</span>
+            {% elif e.rang == 2 %}<span class="rang-2">🥈 2ème</span>
+            {% elif e.rang == 3 %}<span class="rang-3">🥉 3ème</span>
+            {% else %}<span class="rang-n">{{ e.rang }}ème</span>{% endif %}
+          </td>
+          <td><strong>{{ e.prenom }} {{ e.nom }}</strong></td>
+          <td style="text-align:center;">
+            {% if e.note is not none %}
+            <span class="fs-6 {{ note_color(e.note) }}" style="font-weight:700;">{{ "%.2f"|format(e.note) }}/20</span>
+            {% else %}
+            <span style="color:var(--text-muted);font-style:italic;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Classement général (toutes matières) -->
+  <div class="card">
+    <div class="card-header"><span class="card-title"><i class="bi bi-trophy"></i> Classement général (toutes matières)</span></div>
+    {% if not classement %}
+    <div style="padding:30px;text-align:center;color:var(--text-muted);"><i class="bi bi-info-circle" style="font-size:24px;display:block;margin-bottom:8px;"></i> Pas encore de classement disponible.</div>
+    {% else %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rang</th><th>Étudiant</th><th style="text-align:center;">Moyenne</th><th style="text-align:center;">Décision</th></tr></thead>
+        <tbody>
+        {% for r in classement %}
+        <tr>
+          <td>
+            {% if r.rang == 1 %}<span class="rang-1">🥇 1er</span>
+            {% elif r.rang == 2 %}<span class="rang-2">🥈 2ème</span>
+            {% elif r.rang == 3 %}<span class="rang-3">🥉 3ème</span>
+            {% else %}<span class="rang-n">{{ r.rang }}ème</span>{% endif %}
+          </td>
+          <td><strong>{{ r.prenom }} {{ r.nom }}</strong></td>
+          <td style="text-align:center;"><span class="fs-6 {{ note_color(r.moyenne) }}" style="font-weight:700;">{{ "%.2f"|format(r.moyenne) if r.moyenne is not none else '—' }}</span></td>
+          <td style="text-align:center;">
+            {% set dec = r.decision or '' %}
+            <span class="badge {% if 'Admis' in dec %}b-green{% else %}b-red{% endif %}">{{ dec or '—' }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
