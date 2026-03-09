@@ -3,14 +3,14 @@
 {% block content %}
 <div class="ph">
   <div>
-    <h1>📖 {{ matiere.nom }}</h1>
+    <h1><i class="bi bi-book-half"></i> {{ matiere.nom }}</h1>
     <div class="ph-sub">Coef: {{ matiere.coefficient }} • Volume: {{ matiere.volume_horaire or 'Non défini' }}</div>
   </div>
   <a href="/EDE/admin/matieres" class="btn btn-sec">← Retour</a>
 </div>
 
 <div class="card" style="margin-bottom: 24px;">
-  <div class="card-header"><span class="card-title">👨‍🏫 Professeurs et Classes affiliés</span></div>
+  <div class="card-header"><span class="card-title">👨‍<i class="bi bi-building"></i> Professeurs et Classes affiliés</span></div>
   <div class="table-wrap">
     <table>
       <thead>
@@ -45,7 +45,7 @@
 </div>
 
 <div class="card">
-  <div class="card-header"><span class="card-title">📝 Toutes les notes pour cette matière</span></div>
+  <div class="card-header"><span class="card-title"><i class="bi bi-file-earmark-text-fill"></i> Toutes les notes pour cette matière</span></div>
   <div class="table-wrap">
     <table>
       <thead>

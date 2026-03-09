@@ -3,7 +3,7 @@
 {% block content %}
 <div class="ph">
   <div>
-    <h1>{{ '✏️ Modifier' if etudiant else '+ Ajouter' }} un étudiant</h1>
+    <h1>{{ '<i class="bi bi-pencil-square"></i> Modifier' if etudiant else '+ Ajouter' }} un étudiant</h1>
     <div class="ph-sub">{{ 'Matricule ' + etudiant.matricule|string if etudiant else 'Nouveau compte étudiant' }}</div>
   </div>
   <a href="/EDE/admin/etudiants" class="btn btn-sec">← Retour</a>
@@ -46,7 +46,7 @@
     </div>
     {% endif %}
     <button class="btn btn-primary" type="submit">
-      {{ '✏️ Enregistrer' if etudiant else '+ Créer' }}
+      {{ '<i class="bi bi-pencil-square"></i> Enregistrer' if etudiant else '+ Créer' }}
     </button>
   </form>
 </div>

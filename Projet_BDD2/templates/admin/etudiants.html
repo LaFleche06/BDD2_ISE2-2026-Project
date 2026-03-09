@@ -2,7 +2,7 @@
 {% block title %}Étudiants{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>👥 Étudiants</h1><div class="ph-sub">{{ etudiants|length }} étudiants</div></div>
+  <div><h1><i class="bi bi-people-fill"></i> Étudiants</h1><div class="ph-sub">{{ etudiants|length }} étudiants</div></div>
   <div style="display:flex;gap:8px">
     <a href="/EDE/admin/etudiants/ajouter" class="btn btn-primary">+ Ajouter un étudiant</a>
     <a href="/EDE/admin/import-lot/etudiant" class="btn btn-sec">📂 Import en lot</a>
@@ -32,10 +32,10 @@
       </td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <a href="/EDE/admin/etudiants/{{ e.matricule }}" class="btn btn-primary btn-xs" style="margin-right:4px">👁️ Profil</a>
-        <a href="/EDE/admin/etudiants/modifier/{{ e.matricule }}" class="btn btn-sec btn-xs">✏️ Éditer</a>
+        <a href="/EDE/admin/etudiants/modifier/{{ e.matricule }}" class="btn btn-sec btn-xs"><i class="bi bi-pencil-square"></i> Éditer</a>
         <form action="/EDE/admin/etudiants/supprimer/{{ e.matricule }}" method="post" style="display:inline"
               onsubmit="return confirm('Supprimer {{ e.prenom }} {{ e.nom }} ?')">
-          <button class="btn btn-red btn-xs">🗑️ Suppr.</button>
+          <button class="btn btn-red btn-xs"><i class="bi bi-trash-fill"></i> Suppr.</button>
         </form>
         {% if e.utilisateur %}
           {% if e.utilisateur.actif %}

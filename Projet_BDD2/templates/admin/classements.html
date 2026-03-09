@@ -6,7 +6,7 @@
 
 <div class="ph">
   <div class="ph-left">
-    <h1>🏆 Classements & Résultats</h1>
+    <h1><i class="bi bi-trophy-fill"></i> Classements & Résultats</h1>
     <div class="ph-sub">Classement en direct + résultats officiels</div>
   </div>
 </div>
@@ -58,7 +58,7 @@
   <!-- Classement général en direct -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">📊 Classement général — en direct</span>
+      <span class="card-title"><i class="bi bi-bar-chart-fill"></i> Classement général — en direct</span>
       <form action="/EDE/admin/classements/sauvegarder/{{ classe_id }}" method="post" style="display:inline">
         <button class="btn btn-green btn-sm" type="submit"
                 onclick="return confirm('Sauvegarder les résultats officiels pour cette classe ?')">
@@ -97,7 +97,7 @@
   {% if matieres_classe %}
   <div class="card">
     <div class="card-header">
-      <span class="card-title">📚 Classement par matière</span>
+      <span class="card-title"><i class="bi bi-journal-bookmark-fill"></i> Classement par matière</span>
       {% if matieres_classe %}
       <span style="font-size:12px;color:var(--text-muted)">
         {{ (matieres_classe | selectattr('id', 'eq', matiere_id) | list | first).nom if matiere_id else '' }}

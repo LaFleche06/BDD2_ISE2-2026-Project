@@ -80,7 +80,7 @@
               <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ i.nb_notes }}/{{ i.nb_etudiants }} notes</div>
             </td>
             <td style="text-align:right" onclick="event.stopPropagation()">
-              <a href="{{ url_for('admin_notes', classe_id=i.classe_id) }}" class="btn btn-sec btn-sm">
+              <a href="{{ url_for('admin_notes', classe_id=i.classe_id, prof_id=prof.id) }}" class="btn btn-sec btn-sm">
                 <i class="bi bi-eye"></i> Notes
               </a>
             </td>

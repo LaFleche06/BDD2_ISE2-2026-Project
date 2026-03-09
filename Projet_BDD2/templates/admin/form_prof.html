@@ -3,7 +3,7 @@
 {% block content %}
 <div class="ph">
   <div>
-    <h1>{{ '✏️ Modifier' if prof else '+ Ajouter' }} un professeur</h1>
+    <h1>{{ '<i class="bi bi-pencil-square"></i> Modifier' if prof else '+ Ajouter' }} un professeur</h1>
     <div class="ph-sub">{{ (prof.prenom + ' ' + prof.nom) if prof else 'Nouveau compte professeur' }}</div>
   </div>
   <a href="/EDE/admin/professeurs" class="btn btn-sec">← Retour</a>
@@ -55,7 +55,7 @@
       </div>
       {% endif %}
       <button class="btn btn-primary" type="submit">
-        {{ '✏️ Enregistrer' if prof else '+ Créer' }}
+        {{ '<i class="bi bi-pencil-square"></i> Enregistrer' if prof else '+ Créer' }}
       </button>
     </form>
   </div>

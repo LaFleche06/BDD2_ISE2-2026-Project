@@ -289,7 +289,8 @@ def prof_notes_batch():
 
     etudiants = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
     notes     = api.get_mes_notes(_token())
-    existing_notes = {n['etudiant_id']: n for n in notes if n['matiere_id'] == matiere_id}
+    # Ensure keys and comparison are robust against type changes
+    existing_notes = {int(n['etudiant_id']): n for n in notes if str(n['matiere_id']) == str(matiere_id)}
     
     return render_template('prof/batch_notes.html',
                            classes=classes, classe_id=classe_id,
@@ -335,8 +336,8 @@ def prof_moyennes():
     notes_prof = api.get_mes_notes(_token())
     notes_matiere = [n for n in notes_prof if n['matiere_id'] == matiere_id]
 
-    # Utiliser l'endpoint admin pour avoir les matricules cohérents
-    etudiants_classe = api.get_etudiants_admin_by_classe(_token(), classe_id) if classe_id else []
+    # Utiliser l'endpoint professeur pour avoir les matricules cohérents
+    etudiants_classe = api.get_etudiants_by_classe(_token(), classe_id) if classe_id else []
     # Les notes ont etudiant_id = matricule, on construit un dict matricule → étudiant
     etud_by_matricule = {e['matricule']: e for e in etudiants_classe}
 
@@ -1116,5 +1117,5 @@ def modifier_mot_de_passe():
 import os
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 

@@ -6,7 +6,7 @@
 
 <div class="ph">
   <div class="ph-left">
-    <h1>⚙️ Tableau de Bord</h1>
+    <h1><i class="bi bi-gear-fill"></i> Tableau de Bord</h1>
     <div class="ph-sub">Administration générale de l'établissement</div>
   </div>
   <form method="GET" class="d-flex" style="display:flex;gap:10px;align-items:center;">
@@ -44,12 +44,12 @@
   <div class="card">
     <div class="card-header"><span class="card-title">🚀 Accès rapide</span></div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <a href="/EDE/admin/etudiants" class="btn btn-primary">👥 Gérer les étudiants</a>
-      <a href="/EDE/admin/professeurs" class="btn btn-sec">📚 Gérer les professeurs</a>
-      <a href="/EDE/admin/matieres" class="btn btn-sec">📖 Gérer les matières</a>
-      <a href="/EDE/admin/classes" class="btn btn-sec">🏫 Gérer les classes</a>
-      <a href="/EDE/admin/notes" class="btn btn-sec">📝 Gérer les notes</a>
-      <a href="/EDE/admin/classements" class="btn btn-green">🏆 Classements et résultats</a>
+      <a href="/EDE/admin/etudiants" class="btn btn-primary"><i class="bi bi-people-fill"></i> Gérer les étudiants</a>
+      <a href="/EDE/admin/professeurs" class="btn btn-sec"><i class="bi bi-journal-bookmark-fill"></i> Gérer les professeurs</a>
+      <a href="/EDE/admin/matieres" class="btn btn-sec"><i class="bi bi-book-half"></i> Gérer les matières</a>
+      <a href="/EDE/admin/classes" class="btn btn-sec"><i class="bi bi-building"></i> Gérer les classes</a>
+      <a href="/EDE/admin/notes" class="btn btn-sec"><i class="bi bi-file-earmark-text-fill"></i> Gérer les notes</a>
+      <a href="/EDE/admin/classements" class="btn btn-green"><i class="bi bi-trophy-fill"></i> Classements et résultats</a>
     </div>
   </div>
   <div class="card">
@@ -60,7 +60,7 @@
       <tr><th style="background:transparent;border:none;padding-left:0;">RÔLES</th><td>admin / prof / etudiant</td></tr>
       <tr><th style="background:transparent;border:none;padding-left:0;">FILTRE ACTIF</th><td>{{ annee_filtre or 'Aucun' }}</td></tr>
     </table>
-    <br><a href="/EDE/test-api" class="btn btn-sec btn-sm">🔌 Tester la connexion API</a>
+    <br><a href="/EDE/test-api" class="btn btn-sec btn-sm"><i class="bi bi-plug-fill"></i> Tester la connexion API</a>
   </div>
 </div>
 {% endblock %}

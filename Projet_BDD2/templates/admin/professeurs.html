@@ -2,7 +2,7 @@
 {% block title %}Professeurs{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>📚 Professeurs</h1><div class="ph-sub" id="count-label">{{ professeurs|length }} professeurs</div></div>
+  <div><h1><i class="bi bi-journal-bookmark-fill"></i> Professeurs</h1><div class="ph-sub" id="count-label">{{ professeurs|length }} professeurs</div></div>
   <div style="display:flex;gap:8px">
     <a href="/EDE/admin/professeurs/ajouter" class="btn btn-primary">+ Ajouter un professeur</a>
     <a href="/EDE/admin/professeurs/import-lot" class="btn btn-sec">📂 Import en lot</a>
@@ -67,10 +67,10 @@
       </td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <a href="/EDE/admin/professeurs/{{ p.id }}" class="btn btn-primary btn-xs" style="margin-right:4px">👁️ Profil</a>
-        <a href="/EDE/admin/professeurs/modifier/{{ p.id }}" class="btn btn-sec btn-xs">✏️ Gérer</a>
+        <a href="/EDE/admin/professeurs/modifier/{{ p.id }}" class="btn btn-sec btn-xs"><i class="bi bi-pencil-square"></i> Gérer</a>
         <form action="/EDE/admin/professeurs/supprimer/{{ p.id }}" method="post" style="display:inline"
               onsubmit="return confirm('Supprimer {{ p.prenom }} {{ p.nom }} ?')">
-          <button class="btn btn-red btn-xs">🗑️ Suppr.</button>
+          <button class="btn btn-red btn-xs"><i class="bi bi-trash-fill"></i> Suppr.</button>
         </form>
         {% if p.utilisateur %}
           {% if p.utilisateur.actif %}

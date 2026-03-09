@@ -2,7 +2,7 @@
 {% block title %}Matières{% endblock %}
 {% block content %}
 <div class="ph">
-  <div><h1>📖 Matières</h1><div class="ph-sub">{{ matieres|length }} matières</div></div>
+  <div><h1><i class="bi bi-book-half"></i> Matières</h1><div class="ph-sub">{{ matieres|length }} matières</div></div>
   <a href="/EDE/admin/matieres/ajouter" class="btn btn-primary">+ Ajouter une matière</a>
 </div>
 <div class="table-wrap">
@@ -16,10 +16,10 @@
       <td style="color:#6b7280;font-size:12px">{{ m.volume_horaire or '—' }}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <a href="/EDE/admin/matieres/{{ m.id }}" class="btn btn-primary btn-xs" style="margin-right:4px">👁️ Détails</a>
-        <a href="/EDE/admin/matieres/modifier/{{ m.id }}" class="btn btn-sec btn-xs">✏️ Éditer</a>
+        <a href="/EDE/admin/matieres/modifier/{{ m.id }}" class="btn btn-sec btn-xs"><i class="bi bi-pencil-square"></i> Éditer</a>
         <form action="/EDE/admin/matieres/supprimer/{{ m.id }}" method="post" style="display:inline"
               onsubmit="return confirm('Supprimer {{ m.nom }} ?')">
-          <button class="btn btn-red btn-xs">🗑️ Suppr.</button>
+          <button class="btn btn-red btn-xs"><i class="bi bi-trash-fill"></i> Suppr.</button>
         </form>
       </td>
     </tr>
