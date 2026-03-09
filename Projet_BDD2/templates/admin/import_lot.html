@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Import en lot{% endblock %}
+{% block content %}
+
+{{ breadcrumb([
+  {'name': 'Étudiants' if type == 'etudiant' else 'Professeurs',
+   'url': url_for('admin_etudiants') if type == 'etudiant' else url_for('admin_professeurs')},
+  {'name': 'Import en lot', 'url': None}
+]) }}
+
+<div class="ph">
+  <div class="ph-left">
+    <h1>📂 Import en lot — {{ 'Étudiants' if type == 'etudiant' else 'Professeurs' }}</h1>
+    <div class="ph-sub">Ajouter plusieurs {{ 'étudiants' if type == 'etudiant' else 'professeurs' }} en une seule opération</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="{{ url_for('admin_etudiants') if type == 'etudiant' else url_for('admin_professeurs') }}" class="btn btn-sec">← Retour</a>
+    <a href="{{ url_for('admin_import_lot', type='prof' if type == 'etudiant' else 'etudiant') }}" class="btn btn-sec">
+      Passer aux {{ 'Professeurs' if type == 'etudiant' else 'Étudiants' }}
+    </a>
+  </div>
+</div>
+
+{% if resultats %}
+<!-- Résultats de l'import précédent -->
+<div class="card" style="margin-bottom:18px">
+  <div class="card-header"><span class="card-title">📋 Résultats de l'import</span></div>
+  <div style="padding:12px 20px">
+    {% for r in resultats %}
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+      {% if r.ok %}
+        <span class="badge b-green">✔ OK</span>
+      {% else %}
+        <span class="badge b-red">✖ Erreur</span>
+      {% endif %}
+      <span style="font-weight:600">{{ r.nom }} {{ r.prenom }}</span>
+      <span style="color:var(--text-muted);font-size:12px">{{ r.email }}</span>
+      {% if not r.ok %}<span style="color:var(--danger);font-size:12px">— {{ r.message }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">
+      {% if type == 'etudiant' %}👨‍🎓 Saisie des étudiants{% else %}👨‍🏫 Saisie des professeurs{% endif %}
+    </span>
+    <button class="btn btn-sec btn-sm" type="button" onclick="addRow()">+ Ajouter une ligne</button>
+  </div>
+
+  <form method="post" id="lot-form" style="padding:0 20px 20px">
+    <div class="table-wrap" style="overflow-x:auto">
+      <table id="lot-table">
+        <thead>
+          <tr>
+            <th>Nom *</th>
+            <th>Prénom *</th>
+            <th>Email *</th>
+            <th>Mot de passe *</th>
+            <th>Téléphone</th>
+            {% if type == 'etudiant' %}
+            <th>Classe *</th>
+            {% endif %}
+            <th style="text-align:center">Suppr.</th>
+          </tr>
+        </thead>
+        <tbody id="lot-body">
+          <!-- Lignes dynamiques -->
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:12px;align-items:center">
+      <button type="submit" class="btn btn-primary" style="padding:12px 28px;font-size:15px">
+        🚀 Importer tout
+      </button>
+      <span style="color:var(--text-muted);font-size:13px">* Champs obligatoires</span>
+    </div>
+  </form>
+</div>
+
+<script>
+const CLASSES = {{ classes_json }};
+const TYPE = "{{ type }}";
+let rowCount = 0;
+
+function addRow() {
+  const tbody = document.getElementById('lot-body');
+  const idx = rowCount++;
+  const tr = document.createElement('tr');
+  tr.id = 'row-' + idx;
+
+  let classeCol = '';
+  if (TYPE === 'etudiant') {
+    let opts = '<option value="">— Classe —</option>';
+    CLASSES.forEach(c => { opts += `<option value="${c.id}">${c.libelle}</option>`; });
+    classeCol = `<td><select name="rows[${idx}][classe_id]" required style="min-width:120px">${opts}</select></td>`;
+  }
+
+  tr.innerHTML = `
+    <td><input type="text" name="rows[${idx}][nom]" required placeholder="Nom" style="min-width:100px"></td>
+    <td><input type="text" name="rows[${idx}][prenom]" required placeholder="Prénom" style="min-width:100px"></td>
+    <td><input type="email" name="rows[${idx}][email]" required placeholder="email@exemple.com" style="min-width:160px"></td>
+    <td><input type="password" name="rows[${idx}][mot_de_passe]" required placeholder="••••••••" style="min-width:120px"></td>
+    <td><input type="text" name="rows[${idx}][telephone]" placeholder="77XXXXXXX" style="min-width:100px"></td>
+    ${classeCol}
+    <td style="text-align:center"><button type="button" class="btn btn-red btn-xs" onclick="removeRow(${idx})">🗑️</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function removeRow(idx) {
+  const row = document.getElementById('row-' + idx);
+  if (row) row.remove();
+}
+
+// Démarrer avec 3 lignes par défaut
+addRow(); addRow(); addRow();
+</script>
+{% endblock %}
