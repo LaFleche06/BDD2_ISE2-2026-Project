@@ -297,10 +297,12 @@ Développé dans le cadre du cours **Bases de Données 2** — ENSAE 2026 par :
 * DIEME Moussa
 * ILLY Jacques
 * SEUNKAM PAHANE Kerencia Dyvana,
+  
 Elèves ingénieurs statisticiens économistes
 
 Sous la supervision de : 
-M. Saliou THIAW,
+**M. Saliou THIAW**,
+
 Ingénieur informaticien
 
 </div>
