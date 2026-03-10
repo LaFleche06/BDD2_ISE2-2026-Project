@@ -292,11 +292,11 @@ pytest tests/ -v
 <div align="center">
 
 Développé dans le cadre du cours **Bases de Données 2** — ENSAE 2026 par :
-* FOGWOUNG DJOUFACK Sarah-Laure
 * ONANENA AMANA Jeanne De La Flèche
+* SEUNKAM PAHANE Kerencia Dyvana
+* FOGWOUNG DJOUFACK Sarah-Laure
 * DIEME Moussa
-* ILLY Jacques
-* SEUNKAM PAHANE Kerencia Dyvana,
+* ILLY Jacques,
   
 Elèves ingénieurs statisticiens économistes
 
