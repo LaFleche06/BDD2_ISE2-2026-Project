@@ -12,7 +12,7 @@
 **Plateforme complète de gestion de la scolarité — étudiants, professeurs, notes et classements.**  
 Architecture moderne en deux couches : une **API REST FastAPI** et un **portail web Flask**.
 
-[🌐 Accéder à l'application](https://campusensae.onrender.com/) · [📖 Documentation API](https://campusensae.onrender.com/docs) · [🐛 Signaler un bug](../../issues)
+[🌐 Accéder à l'application](https://campusensae.onrender.com/) · [📖 Documentation API](https://api-ensae-bdd2-ise2-2026.duckdns.org/docs) · [🐛 Signaler un bug](../../issues)
 
 </div>
 
