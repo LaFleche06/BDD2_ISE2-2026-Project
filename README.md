@@ -12,7 +12,7 @@
 **Plateforme complète de gestion de la scolarité — étudiants, professeurs, notes et classements.**  
 Architecture moderne en deux couches : une **API REST FastAPI** et un **portail web Flask**.
 
-[🌐 Accéder à l'application](https://campusensae.onrender.com/EDE/login) · [📖 Documentation API](https://campusensae.onrender.com/docs) · [🐛 Signaler un bug](../../issues)
+[🌐 Accéder à l'application](https://campusensae.onrender.com/) · [📖 Documentation API](https://campusensae.onrender.com/docs) · [🐛 Signaler un bug](../../issues)
 
 </div>
 
@@ -172,7 +172,7 @@ git pull && sudo systemctl restart api-ede
 |----------------|--------|
 | Déploiement | Automatique via webhook GitHub (branche `main`) |
 | Variables sensibles | Stockées dans Render.com, jamais poussées sur Git |
-| URL publique | [campusensae.onrender.com](https://campusensae.onrender.com/EDE/login) |
+| URL publique | [campusensae.onrender.com](https://campusensae.onrender.com/) |
 
 ### 4. Organisation Git
 
@@ -268,7 +268,7 @@ pytest tests/ -v
 | 📚 Enseignant | `prof@ensae.sn` | `prof123` |
 | 🎓 Étudiant | `etudiant@ensae.sn` | `etu123` |
 
-> 🌐 Accessible directement sur [campusensae.onrender.com/EDE/login](https://campusensae.onrender.com/EDE/login)
+> 🌐 Accessible directement sur [campusensae.onrender.com/EDE/login](https://campusensae.onrender.com/)
 
 ---
 
