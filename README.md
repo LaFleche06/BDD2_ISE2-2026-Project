@@ -1,155 +1,298 @@
-# Campus ENSAE EDE - Système de Gestion Scolaire
+<div align="center">
 
-Bienvenue sur le dépôt du projet Campus ENSAE EDE.
-Ce projet est une plateforme complète permettant la gestion de la scolarité : gestion des étudiants, professeurs, classes, matières, ainsi que la saisie et le calcul automatique des notes et des classements.
+# 🏛️ Campus ENSAE — EDE
+### Système de Gestion Scolaire
 
-L'architecture est scindée en deux parties indépendantes communicant par requêtes HTTP :
-1. **L'API Backend (`/API`)** : Un web service développé avec FastAPI et SQLAlchemy. Elle gère la logique métier, s'interface avec la base de données SQL Server (AWS RDS), et gère l'authentification sécurisée via JWT.
-2. **Le Portail Web Client (`/Projet_BDD2`)** : Une interface utilisateur Server-Side Rendered via Flask et Jinja2. C'est le portail où les différents acteurs (Administrateurs, Professeurs, Étudiants) se connectent pour consulter leurs tableaux de bord.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-AWS%20RDS-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)](https://aws.amazon.com/rds/)
+[![Deployed on Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://campusensae.onrender.com/EDE/login)
 
----
+**Plateforme complète de gestion de la scolarité — étudiants, professeurs, notes et classements.**  
+Architecture moderne en deux couches : une **API REST FastAPI** et un **portail web Flask**.
 
-## Aperçu de l'application
+[🌐 Accéder à l'application](https://campusensae.onrender.com/EDE/login) · [📖 Documentation API](https://campusensae.onrender.com/docs) · [🐛 Signaler un bug](../../issues)
 
-| Portail Web (Flask) | API REST (FastAPI / Swagger) |
-|---|---|
-| ![Page de connexion](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_login.png) | ![Swagger UI](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_api.png) |
-
-![Tableau de bord Admin](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_dashboard.png)
-
----
-
-## Comptes de démonstration
-
-| Rôle | Email | Mot de passe |
-|---|---|---|
-| Administrateur | `admin@ensae.sn` | `admin123` |
-| Enseignant | `prof@ensae.sn` | `prof123` |
-| Étudiant | `etudiant@ensae.sn` | `etu123` |
+</div>
 
 ---
 
-## Architecture et Déploiement en Production
+## 📸 Aperçu
 
-L'infrastructure de production est distribuée et robuste, reposant sur AWS et des services cloud modernes.
+| Portail Web (Flask) | API REST (Swagger UI) |
+|:---:|:---:|
+| ![Login](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_login.png) | ![Swagger](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_api.png) |
 
-### 1. Base de données : Amazon RDS for SQL Server
-Le choix s'est porté sur **Amazon RDS (Relational Database Service)** for SQL Server (édition Express, Free Tier) au lieu d'une instance EC2 classique (IaaS). 
-RDS étant un service PaaS, AWS prend en charge l'installation du moteur, les sauvegardes automatisées, les mises à jour et la surveillance. Cette solution supprime la charge d'administration système.
-
-**Configuration de l'instance RDS :**
-- Moteur : Microsoft SQL Server Express Edition.
-- Instance : .
-- Stockage : 20 Gio SSD, mise à l'échelle automatique désactivée pour maîtriser les coûts.
-- Accès public activé pour permettre les connexions depuis l'API.
-- Sécurité : Le port  (SQL Server) est ouvert au niveau du groupe de sécurité. La sécurité repose sur l'authentification forte interne au moteur SQL Server.
-
-**Migration des données depuis l'environnement local vers RDS :**
-La base a été migrée via un **Script SQL complet (Schema and data)** généré par *SQL Server Management Studio (SSMS)*. Cette méthode a été privilégiée pour sa simplicité par rapport à AWS DMS.
-Le script  contenant la définition complète (tables, vues , procédures stockées, données) a été exécuté directement sur la connexion RDS depuis SSMS, reconstituant ainsi la base de données à l'identique sur le cloud AWS.
-
-### 2. Backend API : FastAPI sur Amazon EC2
-L'application web ne se connecte pas directement à la base de données. Une couche **API REST** intermédiaire développée avec **FastAPI** a été introduite.
-L'API sert de point d'entrée unique, s'assure des calculs complexes et met en place des mesures de sécurité comme l'authentification JWT (JSON Web Token). FastAPI génère également une documentation interactive (Swagger) automatiquement via OpenAPI sur la route .
-
-**Hébergement et Déploiement sur AWS EC2 avec Nginx et Systemd :**
-L'API HTTP est hébergée sur une instance **Amazon EC2** avec la configuration de production suivante :
-- **Serveur d'application :**  exécuté depuis un environnement virtuel Python ().
-- **Supervision (Systemd) :** L'API tourne en tant que service d'arrière-plan  (). Cette supervision assure que le serveur FastAPI démarre automatiquement avec la machine et est relancé en cas de défaillance imprévue.
-- **Reverse Proxy (Nginx) :** Nginx réceptionne les requêtes externes sur les ports 80 (HTTP) et 443 (HTTPS) pour les rediriger vers le processus local  fonctionnant sur le port 8000 ().
-- **Sécurité SSL/TLS (Let's Encrypt) :** La communication est sécurisée de bout en bout en HTTPS. Le certificat SSL a été généré via **Certbot** pour le nom de domaine dynamique .
-
-Cette infrastructure garantit un déploiement \”production-ready\”. La publication d'une mise à jour de l'API se résume à une commande Already up to date. suivie de .
-
-### 3. Portail Web Client : Flask sur Render.com
-Le front-end, développé en **Flask**, tourne de manière server-side-rendered. Il est déployé sur **Render.com**, une plateforme SaaS reconnue.
-- **Intégration continue :** Le déploiement s'y effectue par connexion native au dépôt GitHub (webhook sur la branche ).
-- **Sécurité :** Les identifiants, JWT Secret et les URL (endpoints) de l'API EC2 sont uniquement renseignés dans le gestionnaire de variables d'environnement de Render.com. Ils ne sont jamais poussés sur Git.
-- L'URL publique de l'application est : [https://campusensae.onrender.com/EDE/login](https://campusensae.onrender.com/EDE/login)
-
-### 4. Organisation du travail (Git et GitHub)
-Le projet applique des bonnes pratiques de versions avec Git pour un travail d'équipe fluide :
-- **Branches de développement :** La branche  centralise le code prêt pour la production. Chaque nouvelle implémentation est élaborée dans une branche de type  puis mergée.
-- **Masquage des secrets :** Les données sensibles sont confinées dans le fichier  sur chaque poste (renseigné dans le ), avec pour seule référence un fichier structure vide .
-
+![Dashboard Admin](https://raw.githubusercontent.com/LaFleche06/BDD2_ISE2-2026-Project/main/docs/screenshot_dashboard.png)
 
 ---
 
-## Exécution en Local
+## 📋 Table des matières
 
-### Pré-requis
-- Python 3.10 ou supérieur.
-- Un gestionnaire de base de données SQL Server local ou l'URL de l'instance RDS de test.
-- Le Pilote ODBC 17 pour SQL Server installé sur la machine hôte.
-
-### Lancer l'API FastAPI
-1. Ouvrez un terminal et déplacez-vous dans le dossier de l'API :
-   ```bash
-   cd API
-   ```
-2. Créez et activez un environnement virtuel Python :
-   ```bash
-   python -m venv env
-   env\Scripts\activate
-   ```
-3. Installez les paquets requis :
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Configurez les variables d'environnement en copiant `.env.example` vers `.env` et en renseignant vos valeurs.
-5. Lancez le serveur de développement Uvicorn :
-   ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-   L'API écoute sur `http://localhost:8000` avec la documentation Swagger disponible sur `/docs`.
-
-### Lancer le Client Web Flask
-1. Ouvrez un second terminal, dans le dossier Web :
-   ```bash
-   cd Projet_BDD2
-   ```
-2. Activez l'environnement virtuel, puis installez les dépendances :
-   ```bash
-   pip install flask requests
-   ```
-3. Assurez-vous que l'application pointe sur l'API (vérifier `config.py` ou `.env`).
-4. Lancez le serveur Flask :
-   ```bash
-   python app.py
-   ```
-   Le portail est accessible sur `http://localhost:5000/EDE/login`.
+- [Architecture](#-architecture)
+- [Fonctionnalités](#-fonctionnalités-par-rôle)
+- [Infrastructure Cloud](#-infrastructure-cloud)
+- [Lancer en local](#-lancer-en-local)
+- [Tests](#-tests)
+- [Comptes de démonstration](#-comptes-de-démonstration)
+- [Stack technique](#-stack-technique)
 
 ---
 
-## Fonctionnalités par Rôle
+## 🏗️ Architecture
 
-### 1. Administrateur
-Responsable du système avec des droits étendus :
-- Gestion des Utilisateurs : Création, activation/suspension et réinitialisation des mots de passe.
-- Gestion Pédagogique : Création des classes, des matières et affectations (Interventions prof → matière → classe).
-- Statistiques et Tableaux de bord : Vision d'ensemble, taux de réussite global, moyenne générale.
-- Résultats officiels : Sauvegarde et consultation du classement final par classe.
+Le projet est scindé en **deux couches indépendantes** qui communiquent par requêtes HTTP :
 
-### 2. Professeur
-Responsable pédagogique et de l'évaluation :
-- Affectations : Visualisation des classes et matières qui lui sont assignées.
-- Gestion des Notes : Saisie individuelle, modification et suppression des évaluations.
-- Classement provisoire : Consultation du classement non-officiel de ses classes.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        NAVIGATEUR                           │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTPS
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│           PORTAIL WEB  /Projet_BDD2                         │
+│           Flask + Jinja2 — Render.com                       │
+│           Server-Side Rendering                             │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTP/REST + JWT
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│           API BACKEND  /API                                 │
+│           FastAPI + SQLAlchemy — AWS EC2                    │
+│           Authentification JWT · Swagger /docs              │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ SQL
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│           BASE DE DONNÉES                                   │
+│           SQL Server — Amazon RDS (Free Tier)               │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 3. Étudiant
-Utilisateur de la plateforme pour le suivi scolaire :
-- Tableau de Bord : Synthèse des informations académiques (moyenne générale pondérée, rang, décision).
-- Bulletin Détaillé : Rapport complet par matière incluant coefficients et classements partiels.
-- Rang Officiel : Position de l'étudiant au sein de sa classe.
+### Structure du dépôt
+
+```
+campus-ensae-ede/
+├── API/                        # Backend FastAPI
+│   ├── main.py                 # Point d'entrée FastAPI
+│   ├── models.py               # Modèles SQLAlchemy
+│   ├── schemas.py              # Schémas Pydantic
+│   ├── auth.py                 # Authentification JWT
+│   ├── routes/                 # Endpoints par ressource
+│   ├── requirements.txt
+│   └── .env.example            # Template des variables d'environnement
+│
+├── Projet_BDD2/                # Frontend Flask
+│   ├── app.py                  # Routes Flask
+│   ├── config.py               # Configuration (lit depuis .env)
+│   ├── templates/
+│   │   ├── base.html
+│   │   ├── login.html
+│   │   ├── etudiant/
+│   │   ├── prof/
+│   │   └── admin/
+│   └── requirements.txt
+│
+├── tests/                      # Tests automatisés (SQLite en mémoire)
+├── docs/                       # Captures d'écran pour le README
+└── README.md
+```
 
 ---
 
-## Tests
+## ✨ Fonctionnalités par rôle
 
-Les tests automatisés de l'API sont situés dans le dossier `tests/`. Ils utilisent une base SQLite en mémoire, sans dépendance à l'infrastructure de production.
+<details>
+<summary><b>⚙️ Administrateur</b> — Droits étendus sur l'ensemble du système</summary>
+
+<br>
+
+- **Gestion des utilisateurs** — Création, activation/suspension, réinitialisation des mots de passe
+- **Gestion pédagogique** — Création des classes, matières et affectations (prof → matière → classe)
+- **Statistiques globales** — Taux de réussite, moyennes, compteurs en temps réel
+- **Résultats officiels** — Sauvegarde et consultation du classement final par classe
+
+</details>
+
+<details>
+<summary><b>📚 Professeur</b> — Gestion pédagogique et évaluation</summary>
+
+<br>
+
+- **Affectations** — Visualisation des classes et matières assignées
+- **Gestion des notes** — Saisie individuelle, modification et suppression
+- **Classement provisoire** — Consultation du classement non-officiel de ses classes
+
+</details>
+
+<details>
+<summary><b>🎓 Étudiant</b> — Suivi de son parcours scolaire</summary>
+
+<br>
+
+- **Tableau de bord** — Moyenne générale pondérée, rang, décision (Admis/Ajourné)
+- **Bulletin détaillé** — Rapport complet par matière avec coefficients
+- **Rang officiel** — Position dans la classe après validation administrative
+
+</details>
+
+---
+
+## ☁️ Infrastructure Cloud
+
+### 1. Base de données — Amazon RDS for SQL Server
+
+> Service **PaaS** : AWS gère l'installation, les sauvegardes et les mises à jour automatiquement.
+
+| Paramètre | Valeur |
+|-----------|--------|
+| Moteur | SQL Server Express Edition |
+| Stockage | 20 Gio SSD |
+| Accès | Public (authentification SQL Server) |
+| Migration | Script SQL complet généré via SSMS |
+
+### 2. API Backend — FastAPI sur Amazon EC2
+
+L'API est l'unique point d'entrée vers la base de données. Elle assure :
+- 🔐 **Authentification JWT** — Tokens sécurisés pour chaque session
+- 📄 **Documentation Swagger** — Auto-générée via OpenAPI sur `/docs`
+- 🔄 **Supervision Systemd** — Redémarrage automatique en cas de défaillance
+- 🔀 **Reverse Proxy Nginx** — Ports 80/443 redirigés vers le processus local
+- 🔒 **SSL/TLS Let's Encrypt** — HTTPS activé via Certbot
+
+**Déploiement d'une mise à jour :**
+```bash
+git pull && sudo systemctl restart api-ede
+```
+
+### 3. Portail Web — Flask sur Render.com
+
+| Fonctionnalité | Détail |
+|----------------|--------|
+| Déploiement | Automatique via webhook GitHub (branche `main`) |
+| Variables sensibles | Stockées dans Render.com, jamais poussées sur Git |
+| URL publique | [campusensae.onrender.com](https://campusensae.onrender.com/EDE/login) |
+
+### 4. Organisation Git
+
+```
+main              ← code production stable
+└── feature/xxx   ← branches de développement → merge vers main
+```
+
+> 🔒 Les secrets (clés JWT, URLs RDS, mots de passe) sont dans `.env` (ignoré par `.gitignore`).  
+> Un fichier `.env.example` sert de référence vide pour les collaborateurs.
+
+---
+
+## 💻 Lancer en local
+
+### Prérequis
+
+- Python **3.10+**
+- SQL Server local **ou** URL de l'instance RDS
+- [ODBC Driver 17 for SQL Server](https://learn.microsoft.com/fr-fr/sql/connect/odbc/download-odbc-driver-for-sql-server)
+
+---
+
+### ① Lancer l'API FastAPI
 
 ```bash
-# Depuis la racine du projet
+# 1. Aller dans le dossier API
+cd API
+
+# 2. Créer et activer l'environnement virtuel
+python -m venv env
+env\Scripts\activate        # Windows
+source env/bin/activate     # Linux/Mac
+
+# 3. Installer les dépendances
+pip install -r requirements.txt
+
+# 4. Configurer les variables d'environnement
+cp .env.example .env
+# → Editer .env avec vos valeurs
+
+# 5. Lancer le serveur
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+✅ API disponible sur `http://localhost:8000`  
+✅ Documentation Swagger sur `http://localhost:8000/docs`
+
+---
+
+### ② Lancer le portail Flask
+
+```bash
+# 1. Aller dans le dossier web (nouveau terminal)
+cd Projet_BDD2
+
+# 2. Activer l'environnement virtuel
+env\Scripts\activate
+
+# 3. Installer les dépendances
+pip install flask requests
+
+# 4. Vérifier que config.py pointe sur l'API locale
+# API_URL = "http://localhost:8000"
+
+# 5. Lancer Flask
+python app.py
+```
+
+✅ Portail disponible sur `http://localhost:5000/EDE/login`
+
+---
+
+## 🧪 Tests
+
+Les tests de l'API utilisent une base **SQLite en mémoire** — aucune dépendance à l'infrastructure de production.
+
+```bash
+# Installer les dépendances de test
 pip install -r requirement-test.txt
+
+# Lancer les tests avec verbosité
 pytest tests/ -v
 ```
+
+---
+
+## 🔑 Comptes de démonstration
+
+| Rôle | Email | Mot de passe |
+|------|-------|:------------:|
+| ⚙️ Administrateur | `admin@ensae.sn` | `admin123` |
+| 📚 Enseignant | `prof@ensae.sn` | `prof123` |
+| 🎓 Étudiant | `etudiant@ensae.sn` | `etu123` |
+
+> 🌐 Accessible directement sur [campusensae.onrender.com/EDE/login](https://campusensae.onrender.com/EDE/login)
+
+---
+
+## 🛠️ Stack technique
+
+| Couche | Technologie | Rôle |
+|--------|-------------|------|
+| **Backend API** | FastAPI + Uvicorn | API REST, logique métier, JWT |
+| **ORM** | SQLAlchemy | Abstraction base de données |
+| **Validation** | Pydantic | Schémas de données et validation |
+| **Frontend** | Flask + Jinja2 | Rendu serveur, portail utilisateur |
+| **Base de données** | SQL Server (RDS) | Stockage persistant |
+| **Sécurité** | JWT + bcrypt | Authentification et hachage |
+| **Hébergement API** | AWS EC2 + Nginx | Serveur de production |
+| **Hébergement Web** | Render.com | Déploiement continu |
+| **SSL** | Let's Encrypt | Certificats HTTPS |
+| **CI/CD** | GitHub + Render Webhooks | Déploiement automatique |
+
+---
+
+<div align="center">
+
+Développé dans le cadre du cours **Bases de Données 2** — ENSAE 2026
+
+⭐ N'hésitez pas à **star** le projet si il vous a été utile !
+
+</div>
